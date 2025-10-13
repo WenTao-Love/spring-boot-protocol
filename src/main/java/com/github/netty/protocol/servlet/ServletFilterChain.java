@@ -62,6 +62,9 @@ public class ServletFilterChain implements FilterChain, Recyclable {
                 httpServletRequest.multipartConfigElement = servletRegistration.multipartConfigElement;
                 httpServletRequest.servletSecurityElement = servletRegistration.servletSecurityElement;
             }
+            if (listenerManager.hasServletRequestListener()) {
+                listenerManager.onServletRequestInitialized(new ServletRequestEvent(servletContext, request));
+            }
         }
 
         //Initialization Servlet
@@ -70,9 +73,6 @@ public class ServletFilterChain implements FilterChain, Recyclable {
                 synchronized (servletRegistration.getServlet()) {
                     if (!servletRegistration.isInitServlet()) {
                         servletRegistration.getServlet().init(servletRegistration.getServletConfig());
-                        if (listenerManager.hasServletRequestListener()) {
-                            listenerManager.onServletRequestInitialized(new ServletRequestEvent(servletContext, request));
-                        }
                     }
                 }
                 servletRegistration.setInitServlet(true);
