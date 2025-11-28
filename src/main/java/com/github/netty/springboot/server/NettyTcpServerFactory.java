@@ -82,11 +82,11 @@ public class NettyTcpServerFactory
         try {
             //Server port
             InetSocketAddress serverAddress = getServerSocketAddress(getAddress(), getPort());
-            ServletContext servletContext = getServletContext();
+            com.github.netty.protocol.servlet.ServletContext servletContext = getServletContext();
             if (servletContext == null) {
                 servletContext = createHttpServletProtocolSpringAdapter().getServletContext();
             }
-            ServletRegistration.Dynamic servletRegistration = servletContext.addServlet("default", new ServletHttpHandlerAdapter(httpHandler));
+            com.github.netty.protocol.servlet.ServletRegistration servletRegistration = servletContext.addServlet("default", new ServletHttpHandlerAdapter(httpHandler));
             servletRegistration.setAsyncSupported(true);
             servletRegistration.addMapping("/");
             servletContext.setServerAddress(serverAddress);
@@ -104,7 +104,7 @@ public class NettyTcpServerFactory
      */
     @Override
     public WebServer getWebServer(ServletContextInitializer... initializers) {
-        ServletContext servletContext = getServletContext();
+        com.github.netty.protocol.servlet.ServletContext servletContext = getServletContext();
         if (servletContext == null) {
             servletContext = createHttpServletProtocolSpringAdapter().getServletContext();
         }
