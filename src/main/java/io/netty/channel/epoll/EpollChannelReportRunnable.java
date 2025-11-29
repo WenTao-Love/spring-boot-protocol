@@ -7,7 +7,7 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.SingleThreadEventLoop;
 
 public class EpollChannelReportRunnable implements Runnable {
-    private LoggerX logger;
+    private final LoggerX logger;
 
     public EpollChannelReportRunnable(LoggerX logger) {
         this.logger = logger;

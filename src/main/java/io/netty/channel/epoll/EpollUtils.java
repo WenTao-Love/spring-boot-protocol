@@ -3,6 +3,8 @@ package io.netty.channel.epoll;
 import io.netty.channel.Channel;
 
 public class EpollUtils {
+	
+	private EpollUtils() {}
 
     public static boolean forceFlush(Channel.Unsafe unsafe) {
         if (unsafe instanceof AbstractEpollChannel.AbstractEpollUnsafe) {

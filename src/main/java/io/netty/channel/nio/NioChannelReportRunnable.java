@@ -9,7 +9,7 @@ import io.netty.channel.SingleThreadEventLoop;
 import java.nio.channels.SelectionKey;
 
 public class NioChannelReportRunnable implements Runnable {
-    private LoggerX logger;
+    private final LoggerX logger;
 
     public NioChannelReportRunnable(LoggerX logger) {
         this.logger = logger;

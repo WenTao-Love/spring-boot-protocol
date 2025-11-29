@@ -6,6 +6,8 @@ import io.netty.channel.nio.AbstractNioChannel;
 
 public class ChannelUtils {
 
+	private ChannelUtils() {}
+	
     public static void forceFlush(Channel channel) {
         Channel.Unsafe unsafe = channel.unsafe();
         if (EpollUtils.forceFlush(unsafe)) {
