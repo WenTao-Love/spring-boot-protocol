@@ -1,11 +1,29 @@
 package com.github.netty.http.example;
 
-import com.github.netty.protocol.servlet.NettyOutputStream;
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.apache.commons.fileupload.util.Streams;
+import org.apache.commons.fileupload2.core.FileItemInput;
+import org.apache.commons.fileupload2.core.FileItemInputIterator;
+import org.apache.commons.fileupload2.core.FileUploadException;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,19 +37,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
-import java.io.*;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
+import com.github.netty.protocol.servlet.NettyOutputStream;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 
 @EnableScheduling
 @RestController
@@ -127,21 +138,22 @@ public class HttpController {
      */
     @RequestMapping("/uploadForApache")
     public ResponseEntity<String> uploadForApache(HttpServletRequest request, HttpServletResponse response) throws IOException, FileUploadException {
-        boolean isMultipart = ServletFileUpload.isMultipartContent(request);
+    	boolean isMultipart = JakartaServletFileUpload.isMultipartContent(request);
         if (isMultipart) {
-            ServletFileUpload upload = new ServletFileUpload();
+        	JakartaServletFileUpload upload = new JakartaServletFileUpload();
             Map<String, String> params = new HashMap<>();
-            FileItemIterator iter = upload.getItemIterator(request);
+            FileItemInputIterator iter = upload.getItemIterator(request);
             while (iter.hasNext()) {
-                FileItemStream item = iter.next();
+                FileItemInput item = iter.next();
                 if (item.isFormField()) {
                     String fieldName = item.getFieldName();
-                    String value = Streams.asString(item.openStream());
+                    
+                    String value = Streams.asString(item.getInputStream());
                     params.put(fieldName, value);
                     Assert.isTrue(fieldName.length() > 0, value);
                     logger.info("uploadForApache -> field = {}, value = {}",fieldName,value);
                 } else {
-                    try (InputStream is = item.openStream()) {
+                    try (InputStream is = item.getInputStream()) {
                         int available = is.available();
                         Path copyFileTo = Paths.get(System.getProperty("user.dir"), item.getName());
                         Files.copy(is, copyFileTo,

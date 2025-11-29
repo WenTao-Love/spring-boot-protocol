@@ -42,7 +42,7 @@ public class MysqlTests {
             PreparedStatement statement = connection.prepareStatement("select * from information_schema.schemata");
             List<Map<String, Object>> list = dumpResultSet(statement.executeQuery());
 
-            Assert.isTrue(list.size() > 0);
+            Assert.isTrue(list.size() > 0,"mysql test error");
         }
     }
 }

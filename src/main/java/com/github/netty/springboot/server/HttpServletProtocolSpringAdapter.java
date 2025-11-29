@@ -15,6 +15,8 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslContextBuilder;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
+import org.springframework.boot.ssl.SslBundle;
+import org.springframework.boot.ssl.SslBundles;
 import org.springframework.boot.web.server.*;
 import org.springframework.util.ClassUtils;
 
@@ -116,7 +118,7 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
             super.setCompressionMimeTypes(compression.getMimeTypes().clone());
         }
         if (serverProperties != null) {
-            super.setMaxHeaderSize((SpringUtil.getNumberBytes(serverProperties, "getMaxHttpHeaderSize")).intValue());
+            super.setMaxHeaderSize((SpringUtil.getNumberBytes(serverProperties, "getMaxHttpRequestHeaderSize")).intValue());//maxHttpHeaderSize -> maxHttpRequestHeaderSize
         }
         Boolean enableH2 = httpServlet.getEnableH2();
         if (enableH2 == null) {
@@ -131,13 +133,14 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
         // https, wss
         Ssl ssl = webServerFactory.getSsl();
         if (ssl != null && ssl.isEnabled()) {
-            SslStoreProvider sslStoreProvider = webServerFactory.getSslStoreProvider();
+        	SslBundles sslBundles = webServerFactory.getSslBundles();
+        	SslBundle sslStoreProvider = sslBundles.getBundle(ssl.getBundle());
             SslContextBuilder sslContextBuilder = SpringUtil.newSslContext(ssl, sslStoreProvider);
             super.setSslContextBuilder(sslContextBuilder);
         }
 
         String location = null;
-        if (multipartProperties != null && multipartProperties.getEnabled()) {
+        if (multipartProperties != null && multipartProperties.isEnabled()) {
             Number maxRequestSize = SpringUtil.getNumberBytes(multipartProperties, "getMaxRequestSize");
             Number fileSizeThreshold = SpringUtil.getNumberBytes(multipartProperties, "getFileSizeThreshold");
 

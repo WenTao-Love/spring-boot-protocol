@@ -10,7 +10,7 @@ import io.netty.handler.stream.ChunkedFile;
 import io.netty.handler.stream.ChunkedInput;
 import io.netty.util.internal.PlatformDependent;
 
-import javax.servlet.WriteListener;
+import jakarta.servlet.WriteListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  *
  * @author wangzihao
  */
-public class ServletOutputStream extends javax.servlet.ServletOutputStream implements Recyclable, NettyOutputStream {
+public class ServletOutputStream extends jakarta.servlet.ServletOutputStream implements Recyclable, NettyOutputStream {
     public static final ServletResetBufferIOException RESET_BUFFER_EXCEPTION = new ServletResetBufferIOException();
     private static final Recycler<ServletOutputStream> RECYCLER = new Recycler<>(ServletOutputStream::new);
     public static int h2ChunkSize = 81920;
@@ -56,9 +56,11 @@ public class ServletOutputStream extends javax.servlet.ServletOutputStream imple
     public long getWriteBytes() {
         return writeBytes.get();
     }
+    
 
+    //原来的write(ByteBuffer buffer)和ServletOutputStream同名方法冲突了
     @Override
-    public ChannelProgressivePromise write(ByteBuffer httpBody) throws IOException {
+    public ChannelProgressivePromise writeJDK(ByteBuffer httpBody) throws IOException {
         ByteBuf byteBuf = Unpooled.wrappedBuffer(httpBody);
         return writeHttpBody(byteBuf, byteBuf.readableBytes());
     }

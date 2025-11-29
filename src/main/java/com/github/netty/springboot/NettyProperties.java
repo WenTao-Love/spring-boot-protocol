@@ -366,7 +366,7 @@ public class NettyProperties implements Serializable {
         private boolean enableUrlFilterAntPathMatcher = false;
 
         /**
-         * 是否开启DNS地址查询. true=开启 {@link javax.servlet.ServletRequest#getRemoteHost}
+         * 是否开启DNS地址查询. true=开启 {@link jakarta.servlet.ServletRequest#getRemoteHost}
          */
         private boolean enableNsLookup = false;
         /**

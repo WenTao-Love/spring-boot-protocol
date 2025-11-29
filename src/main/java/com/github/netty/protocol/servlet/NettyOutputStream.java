@@ -6,7 +6,7 @@ import io.netty.handler.stream.*;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GenericProgressiveFutureListener;
 
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.Flushable;
@@ -49,7 +49,7 @@ public interface NettyOutputStream extends Flushable, Closeable {
      * @see MappedByteBuffer
      * @see ByteBuffer
      */
-    ChannelProgressivePromise write(ByteBuffer httpBody) throws IOException;
+    ChannelProgressivePromise writeJDK(ByteBuffer httpBody) throws IOException;
 
     /**
      * direct write to tcp outputStream

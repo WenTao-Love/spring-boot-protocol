@@ -1,7 +1,12 @@
 package com.github.netty.mqtt;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.github.netty.core.util.LoggerFactoryX;
 import com.github.netty.core.util.LoggerX;
+
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Verticle;
@@ -9,10 +14,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 生产者测试 (一直运行)  注: mqtt-broker端口=8080
@@ -34,23 +35,22 @@ public class MqttProducerBootstrap {
                         //开启遗言
                         .setWillFlag(true)
                         .setWillTopic("willTopic")
-                        .setWillMessage("hello")
+                        .setWillMessageBytes(Buffer.buffer("hello"))
+//                        .setWillMessage("hello")
 
                         .setUsername("admin")
                         .setPassword("123456")
                         .setMaxMessageSize(8192));
 
-                client.connect(MqttBrokerBootstrap.PORT,"localhost", asyncResult -> {
+                client.connect(MqttBrokerBootstrap.PORT,"localhost").andThen(asyncResult -> {
                     Runnable publishTask = () -> {
                         Buffer buffer = Buffer.buffer("数据" + PUBLISH_COUNT.incrementAndGet());
                         client.publish("/hello",buffer,
-                                MqttQoS.EXACTLY_ONCE, true, true,
-                                asyncResult1 -> {
+                                MqttQoS.EXACTLY_ONCE, true, true).andThen(asyncResult1 -> {
                                     if (asyncResult1.succeeded()) {
                                         logger.info("发布数据至topic=/hello成功 {}", asyncResult1);
                                     }
-                                }
-                        );
+                                });
                     };
                     Executors.newScheduledThreadPool(1)
                             .scheduleAtFixedRate(publishTask, 0, 1000, TimeUnit.MILLISECONDS);

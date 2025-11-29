@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.*;
 
+import com.alibaba.com.caucho.hessian.io.Hessian2FactoryManager;
+
 public class DefaultSerializeClassChecker implements AllowClassNotifyListener {
     public static final DefaultSerializeClassChecker INSTANCE = new DefaultSerializeClassChecker(SerializeSecurityManager.INSTANCE);
     private static final long MAGIC_HASH_CODE = 0xcbf29ce484222325L;

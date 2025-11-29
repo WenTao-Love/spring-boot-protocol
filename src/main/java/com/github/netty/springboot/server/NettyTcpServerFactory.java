@@ -1,15 +1,13 @@
 package com.github.netty.springboot.server;
 
-import com.github.netty.core.Ordered;
-import com.github.netty.core.ProtocolHandler;
-import com.github.netty.core.ServerListener;
-import com.github.netty.core.util.IOUtil;
-import com.github.netty.protocol.DynamicProtocolChannelHandler;
-import com.github.netty.protocol.HttpServletProtocol;
-import com.github.netty.protocol.servlet.ServletContext;
-import com.github.netty.protocol.servlet.ServletRegistration;
-import com.github.netty.protocol.servlet.util.HttpLazyThreadPool;
-import com.github.netty.springboot.NettyProperties;
+import java.io.File;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.TreeSet;
+import java.util.function.Supplier;
+
 import org.springframework.boot.web.reactive.server.ConfigurableReactiveWebServerFactory;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
@@ -19,13 +17,15 @@ import org.springframework.boot.web.servlet.server.Jsp;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ServletHttpHandlerAdapter;
 
-import java.io.File;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.TreeSet;
-import java.util.function.Supplier;
+import com.github.netty.core.Ordered;
+import com.github.netty.core.ProtocolHandler;
+import com.github.netty.core.ServerListener;
+import com.github.netty.core.util.IOUtil;
+import com.github.netty.protocol.DynamicProtocolChannelHandler;
+import com.github.netty.protocol.HttpServletProtocol;
+import com.github.netty.protocol.servlet.ServletContext;
+import com.github.netty.protocol.servlet.util.HttpLazyThreadPool;
+import com.github.netty.springboot.NettyProperties;
 
 /**
  * Netty container factory TCP layer server factory

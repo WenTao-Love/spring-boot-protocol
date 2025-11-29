@@ -8,8 +8,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -91,7 +91,7 @@ public class HttpZeroCopyController {
         try(NettyOutputStream outputStream = (NettyOutputStream)response.getOutputStream()){
             MappedByteBuffer mappedByteBuffer = helloSyncMmaps[ThreadLocalRandom.current().nextInt(0,helloSyncMmaps.length)];
 
-            outputStream.write(mappedByteBuffer);
+            outputStream.writeJDK(mappedByteBuffer);
         }
     }
 
@@ -112,7 +112,7 @@ public class HttpZeroCopyController {
 
             response.setContentType("application/json;charset=UTF-8");
             try(NettyOutputStream outputStream = (NettyOutputStream)response.getOutputStream()){
-                outputStream.write(mappedByteBuffer);
+                outputStream.writeJDK(mappedByteBuffer);
                 // outputStream.write(new File("/home/temp.json"));
             } catch (IOException e) {
                 e.printStackTrace();

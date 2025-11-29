@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.netty.protocol.dubbo.serialization;
-
-import com.alibaba.com.caucho.hessian.io.*;
+package com.alibaba.com.caucho.hessian.io;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -27,10 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
+
 public class Hessian2FactoryManager {
     private final ConcurrentHashMap<ClassLoader, SerializerFactory> CL_2_SERIALIZER_FACTORY = new ConcurrentHashMap<>();
-    private final SerializeSecurityManager serializeSecurityManager;
-    private final DefaultSerializeClassChecker defaultSerializeClassChecker;
+    private final com.github.netty.protocol.dubbo.serialization.SerializeSecurityManager serializeSecurityManager;
+    private final com.github.netty.protocol.dubbo.serialization.DefaultSerializeClassChecker defaultSerializeClassChecker;
     String WHITELIST = "dubbo.application.hessian2.whitelist";
     String ALLOW = "dubbo.application.hessian2.allow";
     String DENY = "dubbo.application.hessian2.deny";
@@ -38,8 +37,8 @@ public class Hessian2FactoryManager {
     private volatile SerializerFactory stickySerializerFactory = null;
 
     public Hessian2FactoryManager() {
-        serializeSecurityManager = SerializeSecurityManager.INSTANCE;
-        defaultSerializeClassChecker = DefaultSerializeClassChecker.INSTANCE;
+        serializeSecurityManager = com.github.netty.protocol.dubbo.serialization.SerializeSecurityManager.INSTANCE;
+        defaultSerializeClassChecker = com.github.netty.protocol.dubbo.serialization.DefaultSerializeClassChecker.INSTANCE;
     }
 
     public static <K, V> V computeIfAbsent(ConcurrentMap<K, V> map, K key, Function<? super K, ? extends V> func) {
@@ -121,7 +120,7 @@ public class Hessian2FactoryManager {
                     serializeSecurityManager.addToAlwaysAllowed(pattern);
                 }
             }
-            serializeSecurityManager.setCheckStatus(SerializeCheckStatus.STRICT);
+            serializeSecurityManager.setCheckStatus(com.github.netty.protocol.dubbo.serialization.SerializeCheckStatus.STRICT);
         } else {
             serializerFactory.getClassFactory()
                     .setWhitelist(false);
@@ -156,7 +155,7 @@ public class Hessian2FactoryManager {
         @Override
         public Object readMap(AbstractHessianInput in, Class<?> expectKeyType, Class<?> expectValueType) throws IOException {
             Deserializer keyDeserializer = null, valueDeserializer = null;
-            SerializerFactory factory = findSerializerFactory(in);
+            SerializerFactory factory = ((Hessian2Input)in).findSerializerFactory();
             if (expectKeyType != null) {
                 keyDeserializer = factory.getDeserializer(expectKeyType.getName());
             }
@@ -253,11 +252,11 @@ public class Hessian2FactoryManager {
     }
 
     public static class Hessian2SerializerFactory extends SerializerFactory {
-        private final DefaultSerializeClassChecker defaultSerializeClassChecker;
+        private final com.github.netty.protocol.dubbo.serialization.DefaultSerializeClassChecker defaultSerializeClassChecker;
         private final Map<Class, LazyMapDeserializer> mapDeserializerCache = new ConcurrentHashMap<>(3);
 
         public Hessian2SerializerFactory(
-                ClassLoader classLoader, DefaultSerializeClassChecker defaultSerializeClassChecker) {
+                ClassLoader classLoader, com.github.netty.protocol.dubbo.serialization.DefaultSerializeClassChecker defaultSerializeClassChecker) {
             super(classLoader);
             this.defaultSerializeClassChecker = defaultSerializeClassChecker;
         }
@@ -291,7 +290,7 @@ public class Hessian2FactoryManager {
 
             checkSerializable(cl);
 
-            return new JavaSerializer(cl, getClassLoader());
+            return new JavaSerializer(cl);
         }
 
         @Override
@@ -305,7 +304,7 @@ public class Hessian2FactoryManager {
 
             checkSerializable(cl);
 
-            return new JavaDeserializer(cl);
+            return new JavaDeserializer(cl,FieldDeserializer2Factory.create());
         }
 
         private void checkSerializable(Class<?> cl) {

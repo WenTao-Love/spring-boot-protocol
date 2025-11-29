@@ -1,12 +1,21 @@
 package com.github.netty.protocol.servlet;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.github.netty.core.util.LoggerFactoryX;
 import com.github.netty.core.util.LoggerX;
 import com.github.netty.core.util.Wrapper;
 
-import javax.servlet.http.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionBindingEvent;
+import jakarta.servlet.http.HttpSessionBindingListener;
+import jakarta.servlet.http.HttpSessionContext;
+import jakarta.servlet.http.HttpSessionEvent;
 
 /**
  * The servlet session
@@ -79,8 +88,8 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         maxInactiveInterval = interval;
     }
 
-    @Override
-    public HttpSessionContext getSessionContext() {
+//    @Override
+    public jakarta.servlet.http.HttpSessionContext getSessionContext() {
         if (sessionContext == null) {
             sessionContext = new HttpSessionContext() {
                 @Override
@@ -106,7 +115,7 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         return attributeMap.get(name);
     }
 
-    @Override
+//    @Override
     public Object getValue(String name) {
         return getAttribute(name);
     }
@@ -120,7 +129,7 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         return Collections.enumeration(attributeMap.keySet());
     }
 
-    @Override
+//    @Override
     public String[] getValueNames() {
         Map<String, Object> attributeMap = this.attributeMap;
         if (attributeMap == null) {
@@ -174,7 +183,7 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         }
     }
 
-    @Override
+//    @Override
     public void putValue(String name, Object value) {
         setAttribute(name, value);
     }
@@ -206,7 +215,7 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         }
     }
 
-    @Override
+//    @Override
     public void removeValue(String name) {
         removeAttribute(name);
     }

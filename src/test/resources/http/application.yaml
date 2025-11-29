@@ -19,7 +19,7 @@ server:
     http-servlet:
       basedir: '/Users/edy/Desktop/webapp'
   tomcat:
-    max-http-post-size: -1
+    max-http-form-post-size: -1
 
 spring:
   servlet:

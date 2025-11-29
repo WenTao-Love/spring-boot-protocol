@@ -11,13 +11,17 @@ import org.springframework.util.Assert;
 
 import com.github.netty.core.util.IOUtil;
 
-@SpringBootTest(classes = HttpTests.class)
-public class HttpTests {
+import cn.hutool.http.HttpUtil;
+
+//@SpringBootTest(classes = HttpTests2.class)
+public class HttpTests2 {
     @Test
     public void test() throws IOException {
-        URL url = new URL("http://localhost:8080/hello?name=xiaowang");
-        InputStream inputStream = url.openStream();
-        String responseBody = IOUtil.readInput(inputStream);
+    	String responseBody = HttpUtil.get("http://localhost:8080/hello?name=xiaowang");
+    	System.out.println(responseBody);
+//        URL url = new URL("http://localhost:8080/hello?name=xiaowang");
+//        InputStream inputStream = url.openStream();
+//        String responseBody = IOUtil.readInput(inputStream);
         Assert.isTrue(Objects.equals("hi! xiaowang", responseBody),"no hi! xiaowang");
     }
 }

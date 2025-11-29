@@ -49,7 +49,7 @@ public class NRpcTests {
         URL url = new URL("http://localhost:8081/sayHello?name=xiaowang");
         InputStream inputStream = url.openStream();
         String responseBody = IOUtil.readInput(inputStream);
-        Assert.isTrue(Objects.equals("{\"say\":\"hi! xiaowang\"}", responseBody));
+        Assert.isTrue(Objects.equals("{\"say\":\"hi! xiaowang\"}", responseBody),responseBody);
     }
 
     @Test
@@ -57,7 +57,7 @@ public class NRpcTests {
         URL url = new URL("http://localhost:8081/sayHelloAsync?name=xiaowang");
         InputStream inputStream = url.openStream();
         String responseBody = IOUtil.readInput(inputStream);
-        Assert.isTrue(Objects.equals("{\"say\":\"hi! xiaowang\"}", responseBody));
+        Assert.isTrue(Objects.equals("{\"say\":\"hi! xiaowang\"}", responseBody),responseBody);
     }
 
     @Test
@@ -65,6 +65,6 @@ public class NRpcTests {
         URL url = new URL("http://localhost:8081/sayHelloRxjava3Async?name=xiaowang");
         InputStream inputStream = url.openStream();
         String responseBody = IOUtil.readInput(inputStream);
-        Assert.isTrue(Objects.equals("{\"say\":\"hi! xiaowang\"}", responseBody));
+        Assert.isTrue(Objects.equals("{\"say\":\"hi! xiaowang\"}", responseBody),responseBody);
     }
 }

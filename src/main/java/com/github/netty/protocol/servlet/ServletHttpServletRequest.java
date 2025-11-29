@@ -12,8 +12,8 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.multipart.*;
 import io.netty.util.internal.PlatformDependent;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,6 +25,7 @@ import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
@@ -850,7 +851,7 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
         return isRequestedSessionIdFromUrl();
     }
 
-    @Override
+//    @Override
     public boolean isRequestedSessionIdFromUrl() {
         getRequestedSessionId0();
         return sessionIdSource == SessionTrackingMode.URL;
@@ -1202,7 +1203,7 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
         return httpExchange.servletContext.getRequestDispatcher(path, getDispatcherType(), true);
     }
 
-    @Override
+//    @Override
     public String getRealPath(String path) {
         return httpExchange.servletContext.getRealPath(path);
     }
@@ -1492,5 +1493,30 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
         this.attributeMap.clear();
         RECYCLER.recycleInstance(this);
     }
+
+    /*
+     * At 100,000 requests a second there are enough IDs here for ~3,000,000 years before it overflows (and then we have
+     * another 3,000,000 years before it gets back to zero).
+     *
+     * Local testing shows that 5, 10, 50, 500 or 1000 threads can obtain 60,000,000+ IDs a second from a single
+     * AtomicLong. That is about 17ns per request. It does not appear that the introduction of this counter will cause a
+     * bottleneck for request processing.
+     */
+    private static final AtomicLong requestIdGenerator = new AtomicLong(0);
+    private volatile String requestId = Long.toString(requestIdGenerator.getAndIncrement());
+	@Override
+	public String getRequestId() {
+		return requestId;
+	}
+
+	@Override
+	public String getProtocolRequestId() {
+		return "";
+	}
+
+	@Override
+	public ServletConnection getServletConnection() {
+		return null;
+	}
 
 }

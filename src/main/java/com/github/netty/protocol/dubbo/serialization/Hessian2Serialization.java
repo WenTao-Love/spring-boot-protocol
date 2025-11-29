@@ -1,5 +1,6 @@
 package com.github.netty.protocol.dubbo.serialization;
 
+import com.alibaba.com.caucho.hessian.io.Hessian2FactoryManager;
 import com.alibaba.com.caucho.hessian.io.Hessian2Input;
 import com.alibaba.com.caucho.hessian.io.Hessian2Output;
 import com.github.netty.protocol.dubbo.Serialization;
