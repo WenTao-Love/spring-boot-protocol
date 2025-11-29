@@ -50,6 +50,13 @@ import jakarta.servlet.http.Part;
 public class HttpController {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    @RequestMapping("/testHello")
+    public String testHello(@RequestParam String name,  
+//                        @RequestBody(required = false) Map body,
+                        HttpServletRequest request, HttpServletResponse response) {
+        return "hi! " + name;
+    }
+    
     /**
      * 访问地址： http://localhost:8080/test/hello
      * @param name name

@@ -22,26 +22,26 @@ public class HttpBootstrap {
         SpringApplication.run(HttpBootstrap.class, args);
     }
 
-//    @Bean
-//    public ServletContextAware servletContextAware(){
-//        return new ServletContextAware() {
-//            @Override
-//            public void setServletContext(ServletContext servletContext) {
-//                String string = servletContext.getRealPath("/");
-//                System.out.println("string = " + string);
-//            }
-//        };
-//    }
-//
-//    @Bean
-//    public ServletConfigAware servletConfigAware(){
-//        return new ServletConfigAware() {
-//            @Override
-//            public void setServletConfig(ServletConfig servletConfig) {
-//                String servletName = servletConfig.getServletName();
-//                System.out.println("servletName = " + servletName);
-//            }
-//        };
-//    }
+    @Bean
+    public ServletContextAware servletContextAware(){
+        return new ServletContextAware() {
+            @Override
+            public void setServletContext(ServletContext servletContext) {
+                String string = servletContext.getRealPath("/");
+                System.out.println("string = " + string);
+            }
+        };
+    }
+
+    @Bean
+    public ServletConfigAware servletConfigAware(){
+        return new ServletConfigAware() {
+            @Override
+            public void setServletConfig(ServletConfig servletConfig) {
+                String servletName = servletConfig.getServletName();
+                System.out.println("servletName = " + servletName);
+            }
+        };
+    }
 
 }
