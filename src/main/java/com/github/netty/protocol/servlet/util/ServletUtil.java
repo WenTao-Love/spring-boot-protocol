@@ -5,21 +5,21 @@ import com.github.netty.core.util.RecyclableUtil;
 import com.github.netty.protocol.servlet.ServletHttpServletRequest;
 import com.github.netty.protocol.servlet.ServletHttpServletResponse;
 import io.netty.handler.codec.DateFormatter;
-import io.netty.handler.codec.http.HttpConstants;
 import io.netty.util.AsciiString;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.RecyclableArrayList;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletRequestWrapper;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.ServletResponseWrapper;
+import jakarta.servlet.http.Cookie;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletRequestWrapper;
-import javax.servlet.ServletResponse;
-import javax.servlet.ServletResponseWrapper;
-import javax.servlet.http.Cookie;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.text.DateFormat;
+import java.text.FieldPosition;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * ServletUtil
@@ -28,11 +28,38 @@ import java.util.Map;
  * 2018/7/15/015
  */
 public class ServletUtil {
+    // -------------------------------------------------- Cookie attribute names
+    public static final String COOKIE_COMMENT_ATTR = "Comment";
+    public static final String COOKIE_DOMAIN_ATTR = "Domain";
+    public static final String COOKIE_MAX_AGE_ATTR = "Max-Age";
+    public static final String COOKIE_PATH_ATTR = "Path";
+    public static final String COOKIE_SECURE_ATTR = "Secure";
+    public static final String COOKIE_HTTP_ONLY_ATTR = "HttpOnly";
+    public static final String COOKIE_SAME_SITE_ATTR = "SameSite";
+    /**
+     * The name of the attribute used to indicate a partitioned cookie as part of
+     * <a href="https://developers.google.com/privacy-sandbox/3pcd#partitioned">CHIPS</a>. This cookie attribute is not
+     * defined by an RFC and may change in a non-backwards compatible way once equivalent functionality is included in
+     * an RFC.
+     */
+    public static final String COOKIE_PARTITIONED_ATTR = "Partitioned";
+    private static final String ANCIENT_DATE;
     private static final String CHARSET_APPEND = HttpHeaderConstants.CHARSET + "=";
+    private static final String COOKIE_DATE_PATTERN = "EEE, dd MMM yyyy HH:mm:ss z";
+    private static final Supplier<DateFormat> COOKIE_DATE_PATTERN_SUPPLIER = () -> {
+        DateFormat df = new SimpleDateFormat(COOKIE_DATE_PATTERN, Locale.US);
+        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return df;
+    };
+    protected static final ThreadLocal<DateFormat> COOKIE_DATE_FORMAT = ThreadLocal.withInitial(COOKIE_DATE_PATTERN_SUPPLIER);
     private static byte[] HEX2B;
     private static long lastTimestamp = System.currentTimeMillis();
     private static final Date lastDate = new Date(lastTimestamp);
     private static CharSequence nowRFCTime = DateFormatter.format(lastDate);
+
+    static {
+        ANCIENT_DATE = COOKIE_DATE_PATTERN_SUPPLIER.get().format(new Date(10000));
+    }
 
     private static void initHex2bIfHaveMemory() {
         if (HEX2B != null) {
@@ -131,59 +158,126 @@ public class ServletUtil {
     /**
      * Encodes the specified cookie into a Set-Cookie header value.
      *
-     * @param cookieName  cookieName
-     * @param cookieValue cookieValue
-     * @param maxAge      maxAge
-     * @param path        path
-     * @param domain      domain
-     * @param secure      secure
-     * @param httpOnly    httpOnly
+     * @param header               header
+     * @param cookieName           cookieName
+     * @param cookieValue          cookieValue
+     * @param maxAge               maxAge
+     * @param path                 path
+     * @param domain               domain
+     * @param secure               secure
+     * @param httpOnly             httpOnly
+     * @param sameSiteCookiesValue sameSiteCookiesValue
+     * @param partitioned          partitioned
+     * @param attributes           attributes
      * @return a single Set-Cookie header value
      */
-    public static CharSequence encodeCookie(StringBuilder buf, String cookieName, String cookieValue, int maxAge, CharSequence path, String domain, boolean secure, boolean httpOnly) {
-        buf.append(cookieName);
-        buf.append((char) HttpConstants.EQUALS);
-        buf.append(cookieValue);
-        buf.append((char) HttpConstants.SEMICOLON);
-        buf.append((char) HttpConstants.SP);
+    public static CharSequence encodeCookie(StringBuilder header, String cookieName, String cookieValue, int maxAge, CharSequence path, String domain, boolean secure, boolean httpOnly,
+                                            String sameSiteCookiesValue,
+                                            boolean partitioned,
+                                            Map<String, String> attributes) {
+        /*
+         * TODO: Name validation takes place in Cookie and cannot be configured per Context. Moving it to here would
+         * allow per Context config but delay validation until the header is generated. However, the spec requires an
+         * IllegalArgumentException on Cookie generation.
+         */
+        header.append(cookieName);
+        header.append('=');
+        if (cookieValue != null && !cookieValue.isEmpty()) {
+//            validateCookieValue(value);
+            header.append(cookieValue);
+        }
 
-        if (maxAge > 0) {
-            buf.append(HttpHeaderConstants.MAX_AGE_1.toString());
-            buf.append((char) HttpConstants.EQUALS);
-            buf.append(maxAge);
-            buf.append((char) HttpConstants.SEMICOLON);
-            buf.append((char) HttpConstants.SP);
-//            Date expires = new Date(cookie.maxAge() * 1000 + System.currentTimeMillis());
-//            addUnquoted(buf, HttpHeaderConstants.EXPIRES.toString(), HttpHeaderDateFormat.get().format(expires));
+        // RFC 6265 prefers Max-Age to Expires but... (see below)
+        if (maxAge > -1) {
+            // Negative Max-Age is equivalent to no Max-Age
+            header.append("; Max-Age=");
+            header.append(maxAge);
+
+            // Microsoft IE and Microsoft Edge don't understand Max-Age so send
+            // expires as well. Without this, persistent cookies fail with those
+            // browsers. See http://tomcat.markmail.org/thread/g6sipbofsjossacn
+
+            // Wdy, DD-Mon-YY HH:MM:SS GMT ( Expires Netscape format )
+            header.append("; Expires=");
+            // To expire immediately we need to set the time in past
+            if (maxAge == 0) {
+                header.append(ANCIENT_DATE);
+            } else {
+                StringBuffer stringBuffer = new StringBuffer(COOKIE_DATE_PATTERN.length());
+                COOKIE_DATE_FORMAT.get().format(new Date(System.currentTimeMillis() + maxAge * 1000L), stringBuffer,
+                        new FieldPosition(0));
+                header.append(stringBuffer);
+            }
         }
-        if (path != null) {
-            buf.append(HttpHeaderConstants.PATH.toString());
-            buf.append((char) HttpConstants.EQUALS);
-            buf.append(path);
-            buf.append((char) HttpConstants.SEMICOLON);
-            buf.append((char) HttpConstants.SP);
+
+        if (domain != null && !domain.isEmpty()) {
+//            validateDomain(domain);
+            header.append("; Domain=");
+            header.append(domain);
         }
-        if (domain != null) {
-            buf.append(HttpHeaderConstants.DOMAIN.toString());
-            buf.append((char) HttpConstants.EQUALS);
-            buf.append(domain);
-            buf.append((char) HttpConstants.SEMICOLON);
-            buf.append((char) HttpConstants.SP);
+
+        if (path != null && !path.isEmpty()) {
+//            validatePath(path);
+            header.append("; Path=");
+            header.append(path);
         }
+
         if (secure) {
-            buf.append(HttpHeaderConstants.SECURE);
-            buf.append((char) HttpConstants.SEMICOLON);
-            buf.append((char) HttpConstants.SP);
+            header.append("; Secure");
         }
+
         if (httpOnly) {
-            buf.append(HttpHeaderConstants.HTTPONLY);
-            buf.append((char) HttpConstants.SEMICOLON);
-            buf.append((char) HttpConstants.SP);
+            header.append("; HttpOnly");
         }
-        if (buf.length() > 0) {
-            buf.setLength(buf.length() - 2);
+
+        String cookieSameSite = attributes.get(COOKIE_SAME_SITE_ATTR);
+        if (cookieSameSite == null) {
+            // Use processor config
+            if (!"Unset".equalsIgnoreCase(sameSiteCookiesValue)) {
+                header.append("; SameSite=");
+                header.append(sameSiteCookiesValue);
+            }
+        } else {
+            // Use explicit config
+            header.append("; SameSite=");
+            header.append(cookieSameSite);
         }
-        return new AsciiString(buf);
+
+        String cookiePartitioned = attributes.get(COOKIE_PARTITIONED_ATTR);
+        if (cookiePartitioned == null) {
+            if (partitioned) {
+                header.append("; Partitioned");
+            }
+        } else {
+            if (Boolean.parseBoolean(cookiePartitioned)) {
+                header.append("; Partitioned");
+            }
+        }
+
+
+        // Add the remaining attributes
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            switch (entry.getKey()) {
+                case COOKIE_COMMENT_ATTR:
+                case COOKIE_DOMAIN_ATTR:
+                case COOKIE_MAX_AGE_ATTR:
+                case COOKIE_PATH_ATTR:
+                case COOKIE_SECURE_ATTR:
+                case COOKIE_HTTP_ONLY_ATTR:
+                case COOKIE_SAME_SITE_ATTR:
+                case COOKIE_PARTITIONED_ATTR:
+                    // Handled above so NO-OP
+                    break;
+                default: {
+//                    validateAttribute(entry.getKey(), entry.getValue());
+                    header.append("; ");
+                    header.append(entry.getKey());
+                    header.append('=');
+                    header.append(entry.getValue());
+                }
+            }
+        }
+        return new AsciiString(header);
     }
 
     /**

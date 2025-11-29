@@ -1,5 +1,6 @@
 package com.github.netty.websocket.example;
 
+import jakarta.websocket.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.server.ServerHttpRequest;
@@ -12,7 +13,6 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
-import javax.websocket.Session;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;

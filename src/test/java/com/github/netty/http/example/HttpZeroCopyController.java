@@ -1,6 +1,8 @@
 package com.github.netty.http.example;
 
 import com.github.netty.protocol.servlet.NettyOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -8,8 +10,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -69,7 +69,7 @@ public class HttpZeroCopyController {
         String list = "[{\"random\":\""+ UUID.randomUUID()+"\"}]";
         setValue(list,helloAsyncMmap);
 
-        java.util.concurrent.CompletableFuture<MappedByteBuffer> current;
+        CompletableFuture<MappedByteBuffer> current;
         while ((current = queue.poll()) != null){
             //回掉方法
             current.complete(helloAsyncMmap);
@@ -91,7 +91,7 @@ public class HttpZeroCopyController {
         try(NettyOutputStream outputStream = (NettyOutputStream)response.getOutputStream()){
             MappedByteBuffer mappedByteBuffer = helloSyncMmaps[ThreadLocalRandom.current().nextInt(0,helloSyncMmaps.length)];
 
-            outputStream.write(mappedByteBuffer);
+            outputStream.writeJDK(mappedByteBuffer);
         }
     }
 
@@ -103,8 +103,8 @@ public class HttpZeroCopyController {
      * @return CompletableFuture spring异步的处理方式， 这里的 MappedByteBuffer是在定时任务线程批量生成 {@link #onDelay}
      */
     @RequestMapping("/helloAsync")
-    public CompletableFuture<java.nio.MappedByteBuffer> helloAsync(HttpServletRequest request,HttpServletResponse response){
-        CompletableFuture<java.nio.MappedByteBuffer> future = new java.util.concurrent.CompletableFuture<>();
+    public CompletableFuture<MappedByteBuffer> helloAsync(HttpServletRequest request, HttpServletResponse response){
+        CompletableFuture<MappedByteBuffer> future = new CompletableFuture<>();
         queue.offer(future);
 
         return future.handle((mappedByteBuffer,throwable) -> {
@@ -112,7 +112,7 @@ public class HttpZeroCopyController {
 
             response.setContentType("application/json;charset=UTF-8");
             try(NettyOutputStream outputStream = (NettyOutputStream)response.getOutputStream()){
-                outputStream.write(mappedByteBuffer);
+                outputStream.writeJDK(mappedByteBuffer);
                 // outputStream.write(new File("/home/temp.json"));
             } catch (IOException e) {
                 e.printStackTrace();

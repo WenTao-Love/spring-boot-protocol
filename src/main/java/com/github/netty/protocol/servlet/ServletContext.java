@@ -13,22 +13,20 @@ import io.netty.handler.codec.http.multipart.DiskFileUpload;
 import io.netty.handler.codec.http.multipart.HttpDataFactory;
 import io.netty.util.AsciiString;
 import io.netty.util.concurrent.FastThreadLocal;
+import jakarta.servlet.*;
+import jakarta.servlet.descriptor.JspConfigDescriptor;
+import jakarta.servlet.http.*;
 
-import javax.servlet.*;
-import javax.servlet.descriptor.JspConfigDescriptor;
-import javax.servlet.http.HttpSessionAttributeListener;
-import javax.servlet.http.HttpSessionIdListener;
-import javax.servlet.http.HttpSessionListener;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.Executor;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
@@ -37,11 +35,11 @@ import java.util.function.Supplier;
  * @author wangzihao
  * 2018/7/14/014
  */
-public class ServletContext implements javax.servlet.ServletContext {
+public class ServletContext implements jakarta.servlet.ServletContext {
 
     public static final int MIN_FILE_SIZE_THRESHOLD = 16384;
     public static final String DEFAULT_UPLOAD_DIR = "/upload";
-    public static final String SERVER_CONTAINER_SERVLET_CONTEXT_ATTRIBUTE = "javax.websocket.server.ServerContainer";
+    public static final String SERVER_CONTAINER_SERVLET_CONTEXT_ATTRIBUTE = "jakarta.websocket.server.ServerContainer";
     private static final boolean SUPPORT_SET_BASE_DIR;
     private static final List<com.github.netty.protocol.servlet.ServletContext> INSTANCE_LIST = Collections.synchronizedList(new ArrayList<>(2));
 
@@ -76,7 +74,7 @@ public class ServletContext implements javax.servlet.ServletContext {
     };
     private final Set<SessionTrackingMode> defaultSessionTrackingModeSet = new HashSet<>(Arrays.asList(SessionTrackingMode.COOKIE, SessionTrackingMode.URL));
     private final MimeMappingsX mimeMappings = new MimeMappingsX();
-    private final UrlMapper<com.github.netty.protocol.servlet.ServletRegistration> servletUrlMapper = new UrlMapper<>();
+    private final UrlMapper<ServletRegistration> servletUrlMapper = new UrlMapper<>();
     private final FilterMapper<ServletFilterRegistration> filterUrlMapper = new FilterMapper<>();
     private final ClassLoader classLoader;
     Supplier<Executor> defaultExecutorSupplier;
@@ -85,6 +83,7 @@ public class ServletContext implements javax.servlet.ServletContext {
      * Default: 20 minutes,
      */
     int sessionTimeout = 1200;
+    boolean cookiePartitioned = false;
     ResourceManager resourceManager;
     boolean autoFlush;
     CharSequence serverHeaderAscii;
@@ -107,6 +106,7 @@ public class ServletContext implements javax.servlet.ServletContext {
     Charset requestCharacterEncodingCharset = HttpConstants.DEFAULT_CHARSET;
     String responseCharacterEncoding = HttpConstants.DEFAULT_CHARSET.name();
     Charset responseCharacterEncodingCharset = HttpConstants.DEFAULT_CHARSET;
+    BiFunction<jakarta.servlet.http.Cookie, HttpServletRequest, String> cookieSameSiteSupplier;
     private LoggerX logger = LoggerFactoryX.getLogger(getLogName(""));
     private Supplier<Executor> asyncExecutorSupplier;
     private SessionService sessionService;
@@ -115,6 +115,7 @@ public class ServletContext implements javax.servlet.ServletContext {
     private boolean mapperContextRootRedirectEnabled = true;
     private String serverHeader;
     private String servletContextName;
+    private InstanceFactory instanceFactory = InstanceFactory.DEFAULT;
     /**
      * output stream maxBufferBytes
      * Each buffer accumulate the maximum number of bytes (default 1M)
@@ -213,6 +214,14 @@ public class ServletContext implements javax.servlet.ServletContext {
         } else {
             return null;
         }
+    }
+
+    public boolean isCookiePartitioned() {
+        return cookiePartitioned;
+    }
+
+    public void setCookiePartitioned(boolean cookiePartitioned) {
+        this.cookiePartitioned = cookiePartitioned;
     }
 
     public Servlet getDefaultServlet() {
@@ -508,11 +517,11 @@ public class ServletContext implements javax.servlet.ServletContext {
         }
         int queryIndex = pathNormalize.indexOf('?');
         String relativePathNoQueryString = queryIndex != -1 ? pathNormalize.substring(0, queryIndex) : pathNormalize;
-        UrlMapper.Element<com.github.netty.protocol.servlet.ServletRegistration> element = servletUrlMapper.getMappingObjectByServletPath(relativePathNoQueryString);
+        UrlMapper.Element<ServletRegistration> element = servletUrlMapper.getMappingObjectByServletPath(relativePathNoQueryString);
         if (element == null) {
             return null;
         }
-        com.github.netty.protocol.servlet.ServletRegistration servletRegistration = element.getObject();
+        ServletRegistration servletRegistration = element.getObject();
         if (servletRegistration == null) {
             return null;
         }
@@ -523,7 +532,7 @@ public class ServletContext implements javax.servlet.ServletContext {
 
     @Override
     public ServletRequestDispatcher getNamedDispatcher(String name) {
-        com.github.netty.protocol.servlet.ServletRegistration servletRegistration = null == name ? null : getServletRegistration(name);
+        ServletRegistration servletRegistration = null == name ? null : getServletRegistration(name);
         if (servletRegistration == null) {
             return null;
         }
@@ -540,28 +549,28 @@ public class ServletContext implements javax.servlet.ServletContext {
         return ServletRequestDispatcher.newInstanceName(filterChain, name, contextPath);
     }
 
-    @Override
+    //    @Override
     public Servlet getServlet(String name) throws ServletException {
-        com.github.netty.protocol.servlet.ServletRegistration registration = servletRegistrationMap.get(name);
+        ServletRegistration registration = servletRegistrationMap.get(name);
         if (registration == null) {
             return null;
         }
         return registration.getServlet();
     }
 
-    @Override
+    //    @Override
     public Enumeration<Servlet> getServlets() {
         List<Servlet> list = new ArrayList<>();
-        for (com.github.netty.protocol.servlet.ServletRegistration registration : servletRegistrationMap.values()) {
+        for (ServletRegistration registration : servletRegistrationMap.values()) {
             list.add(registration.getServlet());
         }
         return Collections.enumeration(list);
     }
 
-    @Override
+    //    @Override
     public Enumeration<String> getServletNames() {
         List<String> list = new ArrayList<>();
-        for (com.github.netty.protocol.servlet.ServletRegistration registration : servletRegistrationMap.values()) {
+        for (ServletRegistration registration : servletRegistrationMap.values()) {
             list.add(registration.getName());
         }
         return Collections.enumeration(list);
@@ -574,7 +583,7 @@ public class ServletContext implements javax.servlet.ServletContext {
         }
     }
 
-    @Override
+    //    @Override
     public void log(Exception exception, String msg) {
         if (logger.isErrorEnabled()) {
             logger.error(msg, exception);
@@ -668,29 +677,29 @@ public class ServletContext implements javax.servlet.ServletContext {
     }
 
     @Override
-    public com.github.netty.protocol.servlet.ServletRegistration addServlet(String servletName, String className) {
+    public ServletRegistration addServlet(String servletName, String className) {
         try {
-            return addServlet(servletName, (Class<? extends Servlet>) Class.forName(className).newInstance());
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            Servlet instance = (Servlet) instanceFactory.newInstance(className);
+            return addServlet(servletName, instance);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addServlet error =" + e + ",servletName=" + servletName, e);
         }
     }
 
     @Override
-    public com.github.netty.protocol.servlet.ServletRegistration addServlet(String servletName, Servlet servlet) {
+    public ServletRegistration addServlet(String servletName, Servlet servlet) {
         Servlet newServlet = servletEventListenerManager.onServletAdded(servlet);
-        com.github.netty.protocol.servlet.ServletRegistration servletRegistration = new com.github.netty.protocol.servlet.ServletRegistration(servletName, newServlet != null ? newServlet : servlet, this, servletUrlMapper);
+        ServletRegistration servletRegistration = new ServletRegistration(servletName, newServlet != null ? newServlet : servlet, this, servletUrlMapper);
         servletRegistrationMap.put(servletName, servletRegistration);
         return servletRegistration;
     }
 
     @Override
-    public com.github.netty.protocol.servlet.ServletRegistration addServlet(String servletName, Class<? extends Servlet> servletClass) {
-        Servlet servlet = null;
+    public ServletRegistration addServlet(String servletName, Class<? extends Servlet> servletClass) {
+        Servlet servlet;
         try {
-            servlet = servletClass.getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+            servlet = instanceFactory.newInstance(servletClass);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("createServlet error =" + e + ",servletName=" + servletName, e);
         }
         return addServlet(servletName, servlet);
@@ -699,28 +708,28 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public <T extends Servlet> T createServlet(Class<T> clazz) throws ServletException {
         try {
-            return clazz.getConstructor().newInstance();
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
-                 IllegalAccessException e) {
+            return instanceFactory.newInstance(clazz);
+        } catch (ReflectiveOperationException e) {
             throw new ServletException("createServlet error =" + e + ",clazz=" + clazz, e);
         }
     }
 
     @Override
-    public com.github.netty.protocol.servlet.ServletRegistration getServletRegistration(String servletName) {
+    public ServletRegistration getServletRegistration(String servletName) {
         return servletRegistrationMap.get(servletName);
     }
 
     @Override
-    public Map<String, com.github.netty.protocol.servlet.ServletRegistration> getServletRegistrations() {
+    public Map<String, ServletRegistration> getServletRegistrations() {
         return servletRegistrationMap;
     }
 
     @Override
     public ServletFilterRegistration addFilter(String filterName, String className) {
         try {
-            return addFilter(filterName, (Class<? extends Filter>) Class.forName(className));
-        } catch (ClassNotFoundException e) {
+            Filter filter = (Filter) instanceFactory.newInstance(className);
+            return addFilter(filterName, filter);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addFilter error =" + e + ",filterName=" + filterName, e);
         }
     }
@@ -735,8 +744,9 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public ServletFilterRegistration addFilter(String filterName, Class<? extends Filter> filterClass) {
         try {
-            return addFilter(filterName, filterClass.newInstance());
-        } catch (InstantiationException | IllegalAccessException e) {
+            Filter filter = (Filter) instanceFactory.newInstance(filterName);
+            return addFilter(filterName, filter);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addFilter error =" + e, e);
         }
     }
@@ -744,8 +754,8 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public <T extends Filter> T createFilter(Class<T> clazz) throws ServletException {
         try {
-            return clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return instanceFactory.newInstance(clazz);
+        } catch (ReflectiveOperationException e) {
             throw new ServletException("createFilter error =" + e, e);
         }
     }
@@ -800,18 +810,23 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public void addListener(String className) {
         try {
-            addListener((Class<? extends EventListener>) Class.forName(className));
-        } catch (ClassNotFoundException e) {
+            EventListener filter = (EventListener) instanceFactory.newInstance(className);
+            addListener(filter);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addListener error =" + e + ",className=" + className, e);
         }
     }
 
     @Override
     public <T extends EventListener> void addListener(T listener) {
-        Objects.requireNonNull(listener);
+        Objects.requireNonNull(listener, "addListener");
 
         boolean addFlag = false;
         ServletEventListenerManager listenerManager = this.servletEventListenerManager;
+        if (listener instanceof ServletContainerInitializer) {
+            listenerManager.addServletContainerInitializer((ServletContainerInitializer) listener);
+            addFlag = true;
+        }
         if (listener instanceof ServletContextAttributeListener) {
             listenerManager.addServletContextAttributeListener((ServletContextAttributeListener) listener);
             addFlag = true;
@@ -825,7 +840,7 @@ public class ServletContext implements javax.servlet.ServletContext {
             addFlag = true;
         }
         if (listener instanceof HttpSessionIdListener) {
-            listenerManager.addHttpSessionIdListenerListener((HttpSessionIdListener) listener);
+            listenerManager.addHttpSessionIdListener((HttpSessionIdListener) listener);
             addFlag = true;
         }
         if (listener instanceof HttpSessionAttributeListener) {
@@ -849,8 +864,9 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public void addListener(Class<? extends EventListener> listenerClass) {
         try {
-            addListener(listenerClass.newInstance());
-        } catch (InstantiationException | IllegalAccessException e) {
+            EventListener eventListener = instanceFactory.newInstance(listenerClass);
+            addListener(eventListener);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addListener listenerClass =" + listenerClass, e);
         }
     }
@@ -858,8 +874,8 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public <T extends EventListener> T createListener(Class<T> clazz) throws ServletException {
         try {
-            return clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return instanceFactory.newInstance(clazz);
+        } catch (ReflectiveOperationException e) {
             throw new ServletException("addListener clazz =" + clazz, e);
         }
     }
@@ -871,7 +887,7 @@ public class ServletContext implements javax.servlet.ServletContext {
 
     @Override
     public ClassLoader getClassLoader() {
-        return resourceManager.getClassLoader();
+        return classLoader;
     }
 
     @Override
@@ -918,7 +934,23 @@ public class ServletContext implements javax.servlet.ServletContext {
     }
 
     @Override
-    public javax.servlet.ServletRegistration.Dynamic addJspFile(String jspName, String jspFile) {
+    public jakarta.servlet.ServletRegistration.Dynamic addJspFile(String jspName, String jspFile) {
         throw new UnsupportedOperationException("addJspFile");
+    }
+
+    public BiFunction<Cookie, HttpServletRequest, String> getCookieSameSiteSupplier() {
+        return cookieSameSiteSupplier;
+    }
+
+    public void setCookieSameSiteSupplier(BiFunction<Cookie, HttpServletRequest, String> cookieSameSiteSupplier) {
+        this.cookieSameSiteSupplier = cookieSameSiteSupplier;
+    }
+
+    public InstanceFactory getInstanceFactory() {
+        return instanceFactory;
+    }
+
+    public void setInstanceFactory(InstanceFactory instanceFactory) {
+        this.instanceFactory = instanceFactory;
     }
 }

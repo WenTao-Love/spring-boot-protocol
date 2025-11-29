@@ -17,6 +17,6 @@ public class HttpTests {
         URL url = new URL("http://localhost:8080/hello?name=xiaowang");
         InputStream inputStream = url.openStream();
         String responseBody = IOUtil.readInput(inputStream);
-        Assert.isTrue(Objects.equals("hi! xiaowang", responseBody));
+        Assert.isTrue(Objects.equals("hi! xiaowang", responseBody),"no hi! xiaowang");
     }
 }

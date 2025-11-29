@@ -50,7 +50,7 @@ public class MqttSslContextCreator {
     /**
      * The OpenSSL provider does not support the {@link KeyManagerFactory}, so we have to lookup the integration
      * certificate and key in order to provide it to OpenSSL.
-     * <p>
+     * 
      * TODO: SNI is currently not supported, we use only the first found private key.
      */
     private static SslContextBuilder builderWithOpenSSLProvider(KeyStore ks, String keyPassword)

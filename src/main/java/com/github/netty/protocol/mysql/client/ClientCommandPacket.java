@@ -19,9 +19,7 @@ package com.github.netty.protocol.mysql.client;
 import com.github.netty.protocol.mysql.AbstractMySqlPacket;
 import com.github.netty.protocol.mysql.Command;
 
-/**
- *
- */
+
 public class ClientCommandPacket extends AbstractMySqlPacket implements ClientPacket {
 
     private final Command command;

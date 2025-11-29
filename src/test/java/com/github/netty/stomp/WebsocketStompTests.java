@@ -115,7 +115,7 @@ public class WebsocketStompTests {
                     String accessToken = "user" + i;
                     httpHeaders.add("access_token", accessToken);
                     //连接至url
-                    StompSession session = client.connect(url, httpHeaders, new StompSessionHandlerAdapter() {
+                    StompSession session = client.connectAsync(url, httpHeaders, new StompSessionHandlerAdapter() {
                         @Override
                         public void afterConnected(StompSession session, StompHeaders headers) {
                             successCount.incrementAndGet();

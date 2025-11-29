@@ -1,6 +1,7 @@
 package com.github.netty.protocol.servlet;
 
 import com.github.netty.core.util.*;
+import com.github.netty.protocol.servlet.http2.H2Util;
 import com.github.netty.protocol.servlet.util.*;
 import io.netty.channel.ChannelId;
 import io.netty.handler.codec.CodecException;
@@ -11,9 +12,9 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.multipart.*;
 import io.netty.util.internal.PlatformDependent;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,6 +26,7 @@ import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
@@ -39,6 +41,7 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
     private static final Locale[] DEFAULT_LOCALS = {Locale.getDefault()};
     private static final Map<String, ResourceManager> RESOURCE_MANAGER_MAP = new HashMap<>(2);
     private static final SnowflakeIdWorker SNOWFLAKE_ID_WORKER = new SnowflakeIdWorker();
+    private static final AtomicLong REQUEST_ID_GENERATOR = new AtomicLong(0);
     private final AtomicBoolean decodeBodyFlag = new AtomicBoolean();
     private final Map<String, Object> attributeMap = new LinkedHashMap<>(32);
     private final LinkedMultiValueMap<String, String> parameterMap = new LinkedMultiValueMap<>(16);
@@ -113,12 +116,15 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
             return parameterMap.isEmpty();
         }
     };
-
     private final List<Part> fileUploadList = new ArrayList<>();
     ServletAsyncContext asyncContext;
     boolean isMultipart;
     HttpRequest nettyRequest;
     ServletHttpExchange httpExchange;
+    MultipartConfigElement multipartConfigElement;
+    ServletSecurityElement servletSecurityElement;
+    ServletRequestDispatcher dispatcher;
+    private ServletConnection servletConnection;
     private ServletHttpSession httpSession;
     private Session session;
     private DispatcherType dispatcherType = null;
@@ -132,9 +138,6 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
     private String characterEncoding;
     private String sessionId;
     private SessionTrackingMode sessionIdSource;
-    MultipartConfigElement multipartConfigElement;
-    ServletSecurityElement servletSecurityElement;
-    ServletRequestDispatcher dispatcher;
     private volatile ResourceManager resourceManager;
     private final Supplier<ResourceManager> resourceManagerSupplier = () -> {
         if (resourceManager == null) {
@@ -197,6 +200,7 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
     private Cookie[] cookies;
     private Locale[] locales;
     private Boolean asyncSupportedFlag;
+    private String requestId;
 
     protected ServletHttpServletRequest() {
     }
@@ -850,7 +854,7 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
         return isRequestedSessionIdFromUrl();
     }
 
-    @Override
+    //    @Override
     public boolean isRequestedSessionIdFromUrl() {
         getRequestedSessionId0();
         return sessionIdSource == SessionTrackingMode.URL;
@@ -1202,7 +1206,7 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
         return httpExchange.servletContext.getRequestDispatcher(path, getDispatcherType(), true);
     }
 
-    @Override
+    //    @Override
     public String getRealPath(String path) {
         return httpExchange.servletContext.getRealPath(path);
     }
@@ -1459,6 +1463,7 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
         }
         this.cookieStringValue = null;
         this.httpSession = null;
+        this.servletConnection = null;
         this.nettyRequest = null;
         this.decodeBodyFlag.set(false);
         this.decodeParameterByUrlFlag = false;
@@ -1478,6 +1483,7 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
         this.requestURI = null;
         this.characterEncoding = null;
         this.sessionId = null;
+        this.requestId = null;
         this.cookies = null;
         this.locales = null;
         this.asyncContext = null;
@@ -1493,4 +1499,65 @@ public class ServletHttpServletRequest implements HttpServletRequest, Recyclable
         RECYCLER.recycleInstance(this);
     }
 
+    @Override
+    public String getRequestId() {
+        String requestId = this.requestId;
+        if (requestId == null) {
+            this.requestId = requestId = Long.toString(REQUEST_ID_GENERATOR.getAndIncrement());
+        }
+        return requestId;
+    }
+
+    @Override
+    public String getProtocolRequestId() {
+        if (HttpConstants.EXIST_DEPENDENCY_H2 && httpExchange != null) {
+            Integer streamId = H2Util.getStreamId(httpExchange.channelHandlerContext.channel());
+            if (streamId != null) {
+                return streamId.toString();
+            }
+        }
+        return "";
+    }
+
+    @Override
+    public ServletConnection getServletConnection() {
+        ServletConnection servletConnection = this.servletConnection;
+        if (servletConnection == null) {
+            Protocol protocol = httpExchange.getProtocol();
+            ChannelId channelId = httpExchange.getChannelHandlerContext().channel().id();
+            this.servletConnection = servletConnection = new ServletConnectionImpl(channelId, protocol);
+        }
+        return servletConnection;
+    }
+
+    private static class ServletConnectionImpl implements ServletConnection {
+        private final ChannelId channelId;
+        private final Protocol protocol;
+
+        private ServletConnectionImpl(ChannelId channelId, Protocol protocol) {
+            this.channelId = channelId;
+            this.protocol = protocol;
+        }
+
+        @Override
+        public String getConnectionId() {
+            return channelId.toString();
+        }
+
+        @Override
+        public String getProtocol() {
+            return protocol.getNormalizationName();
+        }
+
+        @Override
+        public String getProtocolConnectionId() {
+            // 只有http3需要返回id，其他无需返回
+            return "";
+        }
+
+        @Override
+        public boolean isSecure() {
+            return protocol.isSecure();
+        }
+    }
 }

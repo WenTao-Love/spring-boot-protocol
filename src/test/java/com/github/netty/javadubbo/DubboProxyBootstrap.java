@@ -6,11 +6,11 @@ import com.github.netty.protocol.HttpServletProtocol;
 import com.github.netty.protocol.dubbo.Application;
 import com.github.netty.protocol.dubbo.ProxyFrontendHandler;
 import com.github.netty.protocol.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 /**
  * dubbo proxy server
  * 访问 http://localhost:8080/index.html 可以看效果
- * <p>
+ * 
  * byte 16
  * 0-1 magic code
  * 2 flag

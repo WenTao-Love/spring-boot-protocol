@@ -1,6 +1,10 @@
 package com.github.netty.protocol.servlet;
 
-import javax.servlet.SessionCookieConfig;
+import jakarta.servlet.SessionCookieConfig;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Configuration of session cookies
@@ -9,14 +13,15 @@ import javax.servlet.SessionCookieConfig;
  * 2018/7/14/014
  */
 public class ServletSessionCookieConfig implements SessionCookieConfig {
+    final Map<String, String> attributes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     boolean httpOnly;
     boolean secure;
+    String domain;
     /**
      * Unit seconds
      */
     private int maxAge = -1;
     private String comment;
-    String domain;
     private String name;
     private String path;
 
@@ -92,6 +97,24 @@ public class ServletSessionCookieConfig implements SessionCookieConfig {
     @Override
     public void setSecure(boolean secure) {
         this.secure = secure;
+    }
+
+
+    @Override
+    public void setAttribute(String name, String value) {
+        attributes.put(name, value);
+    }
+
+
+    @Override
+    public String getAttribute(String name) {
+        return attributes.get(name);
+    }
+
+
+    @Override
+    public Map<String, String> getAttributes() {
+        return Collections.unmodifiableMap(attributes);
     }
 
 }

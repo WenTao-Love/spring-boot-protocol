@@ -5,8 +5,6 @@ import com.github.netty.javaxservlet.example.MyHttpServlet;
 import com.github.netty.protocol.HttpServletProtocol;
 import com.github.netty.protocol.servlet.ServletContext;
 
-import java.io.File;
-
 public class HttpBootstrap {
 
     public static void main(String[] args) throws Exception {

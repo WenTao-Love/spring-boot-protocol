@@ -6,12 +6,13 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 
 /**
  * 消费者测试 (一直运行)  注: mqtt-broker端口=8080
- * <p>
+ * 
  * 用于测试qps性能, 直接右键运行即可
  * MQTT协议
  * @author wangzihao
@@ -28,21 +29,23 @@ public class MqttConsumerBootstrap {
                         //开启遗言
                         .setWillFlag(true)
                         .setWillTopic("willTopic")
-                        .setWillMessage("hello")
+                        .setWillMessageBytes(Buffer.buffer("hello"))
+//                        .setWillMessage("hello")
 
                         .setUsername("admin")
                         .setPassword("123456")
                         .setMaxMessageSize(8192));
 
-                client.connect(MqttBrokerBootstrap.PORT,"localhost", s -> {
+                client.connect(MqttBrokerBootstrap.PORT,"localhost").andThen(s -> {
                     client.publishHandler(response -> {
                         String message = new String(response.payload().getBytes());
                         logger.info("订阅收到topic={}的数据: {}", response.topicName(),message);
                     });
-
-                    client.subscribe("#", MqttQoS.AT_LEAST_ONCE.value(), resp -> {
+                    
+                    client.subscribe("#", MqttQoS.AT_LEAST_ONCE.value()).andThen(resp -> {
                         logger.info("subscribe {}", resp);
                     });
+
                 });
             }
         };

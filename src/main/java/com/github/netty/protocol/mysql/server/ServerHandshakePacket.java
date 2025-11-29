@@ -23,9 +23,7 @@ import io.netty.util.AsciiString;
 
 import java.util.*;
 
-/**
- *
- */
+
 public class ServerHandshakePacket extends DefaultByteBufHolder implements ServerPacket {
 
     public static final int DEFAULT_PROTOCOL_VERSION = 10;

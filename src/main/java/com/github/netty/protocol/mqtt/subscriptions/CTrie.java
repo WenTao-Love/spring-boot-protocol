@@ -176,7 +176,7 @@ public class CTrie {
     /**
      * Cleans Disposes of TNode in separate Atomic CAS operation per
      * http://bravenewgeek.com/breaking-and-entering-lose-the-lock-while-embracing-concurrency/
-     * <p>
+     * 
      * We roughly follow this theory above, but we allow CNode with no Subscriptions to linger (for now).
      *
      * @param inode   inode that handle to the tomb node.

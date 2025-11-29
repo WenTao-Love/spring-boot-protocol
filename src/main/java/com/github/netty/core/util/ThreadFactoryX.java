@@ -8,8 +8,8 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 public class ThreadFactoryX extends DefaultThreadFactory implements java.util.concurrent.ThreadFactory {
 
     private final String preName;
-    private boolean daemon = false;
-    private ThreadGroup threadGroup;
+    private final boolean daemon;
+    private final ThreadGroup threadGroup;
 
     public ThreadFactoryX(String preName, Class<?> poolType) {
         this(preName, poolType, Thread.MAX_PRIORITY, false);
@@ -19,22 +19,20 @@ public class ThreadFactoryX extends DefaultThreadFactory implements java.util.co
         super(NamespaceUtil.newIdName(poolType), priority);
         this.preName = preName;
         this.daemon = daemon;
-        this.threadGroup = System.getSecurityManager() == null ?
-                Thread.currentThread().getThreadGroup() : System.getSecurityManager().getThreadGroup();
+        this.threadGroup = Thread.currentThread().getThreadGroup();
     }
 
     public ThreadFactoryX(String poolName, String preName, boolean daemon) {
         super(poolName);
         this.preName = preName;
-        this.threadGroup = System.getSecurityManager() == null ?
-                Thread.currentThread().getThreadGroup() : System.getSecurityManager().getThreadGroup();
+        this.threadGroup = Thread.currentThread().getThreadGroup();
         this.daemon = daemon;
     }
 
     @Override
     protected Thread newThread(Runnable r, String name) {
         Thread thread = new NettyThreadX(threadGroup, r, name);
-        if (preName != null && preName.length() > 0) {
+        if (preName != null && !preName.isEmpty()) {
             thread.setName("NettyX-" + preName + "-" + thread.getName());
         }
         if (daemon) {

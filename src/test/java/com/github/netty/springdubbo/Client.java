@@ -1,7 +1,6 @@
 package com.github.netty.springdubbo;
 
 import com.github.netty.springdubbo.example.DemoAPI;
-import org.apache.dubbo.rpc.RpcContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.net.URL;

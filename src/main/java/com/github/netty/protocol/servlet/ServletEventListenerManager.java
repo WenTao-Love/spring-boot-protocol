@@ -2,10 +2,9 @@ package com.github.netty.protocol.servlet;
 
 import com.github.netty.core.util.LoggerFactoryX;
 import com.github.netty.core.util.LoggerX;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 
-import javax.servlet.ServletContext;
-import javax.servlet.*;
-import javax.servlet.http.*;
 import java.util.*;
 import java.util.function.Function;
 
@@ -31,7 +30,7 @@ public class ServletEventListenerManager {
 
     //=============event=================
 
-    public void onServletDefaultInitializer(Servlet servlet, javax.servlet.ServletContext servletContext) throws ServletException {
+    public void onServletDefaultInitializer(Servlet servlet, jakarta.servlet.ServletContext servletContext) throws ServletException {
         if (servlet == null) {
             return;
         }
@@ -42,7 +41,7 @@ public class ServletEventListenerManager {
             }
 
             @Override
-            public javax.servlet.ServletContext getServletContext() {
+            public jakarta.servlet.ServletContext getServletContext() {
                 return servletContext;
             }
 
@@ -70,7 +69,7 @@ public class ServletEventListenerManager {
         }
     }
 
-    public void onServletContainerInitializerStartup(Set<Class<?>> c, javax.servlet.ServletContext ctx) {
+    public void onServletContainerInitializerStartup(Set<Class<?>> c, jakarta.servlet.ServletContext ctx) {
         if (servletContainerInitializerList == null) {
             return;
         }
@@ -352,7 +351,7 @@ public class ServletEventListenerManager {
         getServletRequestAttributeListenerList().add(listener);
     }
 
-    public void addHttpSessionIdListenerListener(HttpSessionIdListener listener) {
+    public void addHttpSessionIdListener(HttpSessionIdListener listener) {
         getHttpSessionIdListenerList().add(listener);
     }
 

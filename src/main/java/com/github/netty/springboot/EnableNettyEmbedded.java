@@ -15,7 +15,7 @@ import java.lang.annotation.*;
  * Websocket. {@link NettyRequestUpgradeStrategy}
  * 2. rpc server protocol. {@link NRpcProtocolSpringAdapter}
  * 3. and user-defined protocols..
- * <p>
+ * 
  * If you want to add your own protocol,  you only need implement {@link AbstractProtocol}, Next restart, do not need to do other things
  * <pre> {@code
  *     \@Component
@@ -49,7 +49,7 @@ import java.lang.annotation.*;
  *     }
  *
  * }</pre>
- * <p>
+ * 
  * -----------------------------------------------------------
  * If you want to enable websocket protocol,  you need use NettyRequestUpgradeStrategy.class.
  * example..

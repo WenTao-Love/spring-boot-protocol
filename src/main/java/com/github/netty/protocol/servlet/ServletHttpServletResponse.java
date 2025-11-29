@@ -9,9 +9,9 @@ import com.github.netty.protocol.servlet.util.ServletUtil;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import jakarta.servlet.SessionTrackingMode;
+import jakarta.servlet.http.Cookie;
 
-import javax.servlet.SessionTrackingMode;
-import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  * @author wangzihao
  * 2018/7/15/015
  */
-public class ServletHttpServletResponse implements javax.servlet.http.HttpServletResponse, Recyclable {
+public class ServletHttpServletResponse implements jakarta.servlet.http.HttpServletResponse, Recyclable {
     private static final Recycler<ServletHttpServletResponse> RECYCLER = new Recycler<>(ServletHttpServletResponse::new);
     final ServletOutputStreamWrapper outputStream = new ServletOutputStreamWrapper(new CloseListener());
     final NettyHttpResponse nettyResponse = new NettyHttpResponse();
@@ -337,13 +337,13 @@ public class ServletHttpServletResponse implements javax.servlet.http.HttpServle
         return encodeURL(url);
     }
 
-    @Override
+//    @Override
     @Deprecated
     public String encodeUrl(String url) {
         return encodeURL(url);
     }
 
-    @Override
+//    @Override
     @Deprecated
     public String encodeRedirectUrl(String url) {
         return encodeRedirectURL(url);
@@ -487,7 +487,7 @@ public class ServletHttpServletResponse implements javax.servlet.http.HttpServle
         }
     }
 
-    @Override
+//    @Override
     @Deprecated
     public void setStatus(int sc, String sm) {
         nettyResponse.setStatus(new HttpResponseStatus(sc, sm));
@@ -705,4 +705,13 @@ public class ServletHttpServletResponse implements javax.servlet.http.HttpServle
             ServletHttpServletResponse.RECYCLER.recycleInstance(ServletHttpServletResponse.this);
         }
     }
+
+	@Override
+	public void sendRedirect(String location, int sc, boolean clearBuffer) throws IOException {
+		checkCommitted();
+		if(clearBuffer) {
+			resetBuffer(true);
+		}
+		sendRedirect0(location);
+	}
 }

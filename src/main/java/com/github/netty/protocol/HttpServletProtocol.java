@@ -10,7 +10,6 @@ import com.github.netty.core.util.LoggerX;
 import com.github.netty.core.util.ResourceManager;
 import com.github.netty.protocol.servlet.*;
 import com.github.netty.protocol.servlet.http2.H2Util;
-import com.github.netty.protocol.servlet.SslContextBuilders;
 import com.github.netty.protocol.servlet.util.HttpConstants;
 import com.github.netty.protocol.servlet.util.*;
 import com.github.netty.protocol.servlet.websocket.WebSocketHandler;
@@ -27,11 +26,11 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import jakarta.servlet.Filter;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletException;
 
-import javax.servlet.Filter;
-import javax.servlet.Servlet;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -72,7 +71,7 @@ public class HttpServletProtocol extends AbstractProtocol {
     private boolean enableContentCompression = true;
     private boolean enableH2c = HttpConstants.EXIST_DEPENDENCY_H2;
     private boolean enableH2 = HttpConstants.EXIST_DEPENDENCY_H2;
-    private boolean enableWebsocket = HttpConstants.EXIST_JAVAX_WEBSOCKET;
+    private boolean enableWebsocket = HttpConstants.EXIST_JAKARTA_WEBSOCKET;
 
     private int contentSizeThreshold = 8102;
     private String[] compressionMimeTypes = {"text/html", "text/xml", "text/plain",

@@ -16,9 +16,7 @@
 
 package com.github.netty.protocol.mysql;
 
-/**
- *
- */
+
 public interface Constants {
 
     int NUL_BYTE = 0x00;

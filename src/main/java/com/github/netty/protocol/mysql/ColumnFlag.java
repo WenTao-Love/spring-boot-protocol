@@ -18,7 +18,7 @@ package com.github.netty.protocol.mysql;
 
 /**
  * Field flags.
- * <p>
+ * 
  * http://dev.mysql.com/doc/refman/5.7/en/c-api-data-structures.html
  */
 public enum ColumnFlag {

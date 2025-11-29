@@ -18,6 +18,11 @@ import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.Extension;
+import jakarta.websocket.WebSocketContainer;
+import jakarta.websocket.server.ServerEndpointConfig;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.util.LinkedCaseInsensitiveMap;
@@ -28,11 +33,6 @@ import org.springframework.web.socket.server.HandshakeFailureException;
 import org.springframework.web.socket.server.standard.AbstractStandardUpgradeStrategy;
 import org.springframework.web.socket.server.standard.ServerEndpointRegistration;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.websocket.Endpoint;
-import javax.websocket.Extension;
-import javax.websocket.WebSocketContainer;
-import javax.websocket.server.ServerEndpointConfig;
 import java.security.Principal;
 import java.util.*;
 

@@ -18,9 +18,7 @@ package com.github.netty.protocol.mysql.client;
 
 import com.github.netty.protocol.mysql.Command;
 
-/**
- *
- */
+
 public class ClientQueryPacket extends ClientCommandPacket {
     private final String query;
 

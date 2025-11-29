@@ -6,8 +6,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.handler.stream.ChunkedInput;
+import jakarta.servlet.WriteListener;
 
-import javax.servlet.WriteListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,7 +18,7 @@ import java.util.function.Consumer;
  *
  * @author wangzihao
  */
-public class ServletOutputStreamWrapper extends javax.servlet.ServletOutputStream
+public class ServletOutputStreamWrapper extends jakarta.servlet.ServletOutputStream
         implements Wrapper<ServletOutputStream>, Recyclable, NettyOutputStream {
     /**
      * The source data
@@ -53,9 +53,10 @@ public class ServletOutputStreamWrapper extends javax.servlet.ServletOutputStrea
         this.suspendFlag = suspendFlag;
     }
 
+  //原来的write(ByteBuffer buffer)和ServletOutputStream同名方法冲突了
     @Override
-    public ChannelProgressivePromise write(ByteBuffer httpBody) throws IOException {
-        return source.write(httpBody);
+    public ChannelProgressivePromise writeJDK(ByteBuffer httpBody) throws IOException {
+        return source.writeJDK(httpBody);
     }
 
     @Override

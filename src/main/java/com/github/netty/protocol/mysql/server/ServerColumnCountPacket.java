@@ -18,9 +18,7 @@ package com.github.netty.protocol.mysql.server;
 
 import com.github.netty.protocol.mysql.AbstractMySqlPacket;
 
-/**
- *
- */
+
 public class ServerColumnCountPacket extends AbstractMySqlPacket implements ServerPacket {
 
     private final int fieldCount;

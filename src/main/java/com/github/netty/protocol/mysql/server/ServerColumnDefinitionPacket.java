@@ -26,9 +26,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-/**
- *
- */
+
 public class ServerColumnDefinitionPacket extends AbstractMySqlPacket implements ServerPacket {
     private final String catalog;
     private final String schema;

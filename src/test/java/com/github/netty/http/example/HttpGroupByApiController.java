@@ -1,5 +1,7 @@
 package com.github.netty.http.example;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -7,11 +9,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
@@ -82,7 +83,7 @@ public class HttpGroupByApiController {
      *      这里的返回结果是在定时任务线程批量处理  {@link #onDelay}
      */
     @RequestMapping("/insertOrder")
-    public DeferredResult<Map> insertOrder(String productName,HttpServletRequest request,HttpServletResponse response){
+    public DeferredResult<Map> insertOrder(@RequestParam(value = "productName", required = false) String productName, HttpServletRequest request, HttpServletResponse response){
         MyDeferredResult<Map> deferredResult = new MyDeferredResult<>(request,response);
         queue.offer(deferredResult);
         return deferredResult;
@@ -105,14 +106,14 @@ public class HttpGroupByApiController {
      *      这里的返回结果是在定时任务线程批量处理  {@link #onDelay}
      */
     @RequestMapping("/helloAsyncUser")
-    public DeferredResult<Map> helloAsyncUser(String userId,HttpServletRequest request,HttpServletResponse response){
+    public DeferredResult<Map> helloAsyncUser(@RequestParam(value = "userId", required = false) String userId,HttpServletRequest request,HttpServletResponse response){
         MyDeferredResult<Map> deferredResult = new MyDeferredResult<>(request,response);
         queue.offer(deferredResult);
         return deferredResult;
     }
 
     @RequestMapping("/helloAsyncOrder")
-    public DeferredResult<Map> helloAsyncOrder(String orderId,HttpServletRequest request,HttpServletResponse response){
+    public DeferredResult<Map> helloAsyncOrder(@RequestParam(value = "orderId", required = false) String orderId,HttpServletRequest request,HttpServletResponse response){
         MyDeferredResult<Map> deferredResult = new MyDeferredResult<>(request,response);
         queue.offer(deferredResult);
         return deferredResult;

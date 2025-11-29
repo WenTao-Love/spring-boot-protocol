@@ -18,8 +18,6 @@ package com.github.netty.protocol.mysql.server;
 
 import com.github.netty.protocol.mysql.MysqlPacket;
 
-/**
- *
- */
+
 public interface ServerPacket extends MysqlPacket {
 }

@@ -10,9 +10,6 @@
 
 ![](https://user-images.githubusercontent.com/18204507/68989252-9d871a80-087e-11ea-96e1-20c12689c12a.png)
 
-### 注意
-本项目不支持springboot3和jakarta-servlet，如果有需要可联系我，看下是否需要继续支持。
-
 ### 优势
 
 - 1.针对spring项目# 可以替代tomcat或jetty. 导包后一个@EnableNettyEmbedded注解即用. 
@@ -144,7 +141,19 @@ github地址 : https://github.com/wangzihaogithub/spring-boot-protocol
 
 ### 使用方法 - 添加依赖
 
-#### 如果需要集成spring就用这个 [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/spring-boot-protocol.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:spring-boot-protocol)
+#### 集成springboot3x [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/spring-boot3-protocol.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:spring-boot-protocol)
+
+```xml
+<!-- https://github.com/wangzihaogithub/spring-boot-protocol -->
+<!-- https://mvnrepository.com/artifact/com.github.wangzihaogithub/spring-boot3-protocol -->
+<dependency>
+  <groupId>com.github.wangzihaogithub</groupId>
+  <artifactId>spring-boot3-protocol</artifactId>
+  <version>2.3.34</version>
+</dependency>
+```
+
+#### 集成springboot2x [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/spring-boot-protocol.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:spring-boot-protocol)
 
 ```xml
 <!-- https://github.com/wangzihaogithub/spring-boot-protocol -->
@@ -156,7 +165,7 @@ github地址 : https://github.com/wangzihaogithub/spring-boot-protocol
 </dependency>
 ```
 
-#### 如果不需要集成spring就用这个 [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/netty-servlet.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:netty-servlet)
+#### 纯净版，无多余依赖 [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/netty-servlet.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:netty-servlet)
 
 ```xml
 <!-- https://github.com/wangzihaogithub/netty-servlet -->

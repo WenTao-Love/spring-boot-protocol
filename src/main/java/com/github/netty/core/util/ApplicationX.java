@@ -92,17 +92,23 @@ public class ApplicationX {
     public ApplicationX(Supplier<ClassLoader> resourceLoader) {
         this.resourceLoader = Objects.requireNonNull(resourceLoader);
         addClasses(initMethodAnnotations,
+                "jakarta.annotation.PostConstruct",
                 "javax.annotation.PostConstruct");
         addClasses(destroyMethodAnnotations,
+                "jakarta.annotation.PreDestroy",
                 "javax.annotation.PreDestroy");
         addClasses(scannerAnnotations,
+                "jakarta.annotation.Resource",
                 "javax.annotation.Resource",
                 "org.springframework.stereotype.Component");
         addClasses(autowiredAnnotations,
+                "jakarta.annotation.Resource",
+                "jakarta.inject.Inject",
                 "javax.annotation.Resource",
                 "javax.inject.Inject",
                 "org.springframework.beans.factory.annotation.Autowired");
         addClasses(qualifierAnnotations,
+                "jakarta.annotation.Resource",
                 "javax.annotation.Resource",
                 "org.springframework.beans.factory.annotation.Qualifier");
         addClasses(orderedAnnotations,
@@ -994,7 +1000,7 @@ public class ApplicationX {
 
     /**
      * Callback after singleton creation.
-     * <p>The default implementation marks the singleton as not in creation anymore.
+     * The default implementation marks the singleton as not in creation anymore.
      *
      * @param beanName the name of the singleton that has been created
      * @see #isSingletonCurrentlyInCreation
@@ -1007,7 +1013,7 @@ public class ApplicationX {
 
     /**
      * Callback before singleton creation.
-     * <p>The default implementation register the singleton as currently in creation.
+     * The default implementation register the singleton as currently in creation.
      *
      * @param beanName the name of the singleton about to be created
      * @see #isSingletonCurrentlyInCreation
@@ -1351,7 +1357,7 @@ public class ApplicationX {
     public @interface Bean {
         /**
          * The name of this bean, or if several names, a primary bean name plus aliases.
-         * <p>If left unspecified, the name of the bean is the name of the annotated method.
+         * If left unspecified, the name of the bean is the name of the annotated method.
          * If specified, the method name is ignored.
          *
          * @return String[]
@@ -1443,7 +1449,7 @@ public class ApplicationX {
      * Extension of the {@link Ordered} interface, expressing a <em>priority</em>
      * ordering: {@code PriorityOrdered} objects are always applied before
      * <em>plain</em> {@link Ordered} objects regardless of their order values.
-     * <p>Note: {@code PriorityOrdered} post-processor beans are initialized in
+     * Note: {@code PriorityOrdered} post-processor beans are initialized in
      * a special phase, ahead of other post-processor beans. This subtly
      * affects their autowiring behavior: they will only be autowired against
      * beans which do not require eager initialization for type matching.

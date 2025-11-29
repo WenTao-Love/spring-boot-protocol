@@ -24,9 +24,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-/**
- *
- */
+
 public class ServerEofPacket extends AbstractMySqlPacket implements ServerPacket {
 
     private final int warnings;

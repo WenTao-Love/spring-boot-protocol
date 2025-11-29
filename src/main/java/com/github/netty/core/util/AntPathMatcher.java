@@ -24,9 +24,9 @@ import java.util.regex.Pattern;
 /**
  * implementation for Ant-style path patterns.
  *
- * <p>Part of this mapping code has been kindly borrowed from <a href="http://ant.apache.org">Apache Ant</a>.
+ * Part of this mapping code has been kindly borrowed from <a href="http://ant.apache.org">Apache Ant</a>.
  *
- * <p>The mapping matches URLs using the following rules:
+ * The mapping matches URLs using the following rules:
  * <ul>
  * <li>{@code ?} matches one character</li>
  * <li>{@code *} matches zero or more characters</li>
@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
  * to the {@code filename} variable</li>
  * </ul>
  *
- * <p><strong>Note:</strong> a pattern and a path must both be absolute or must
+ * <strong>Note:</strong> a pattern and a path must both be absolute or must
  * both be relative in order for the two to match. Therefore it is recommended
  * that users of this implementation to sanitize patterns in order to prefix
  * them with "/" as it makes sense in the context in which they're used.
@@ -188,7 +188,7 @@ public class AntPathMatcher {
      * into this matcher's {@link #match} method. A value of {@code true}
      * activates an unlimited pattern cache; a value of {@code false} turns
      * the pattern cache off completely.
-     * <p>Default is for the cache to be on, but with the variant to automatically
+     * Default is for the cache to be on, but with the variant to automatically
      * turn it off when encountering too many patterns to cache at runtime
      * (the threshold is 65536), assuming that arbitrary permutations of patterns
      * are coming in, with little chance for encountering a recurring pattern.
@@ -412,7 +412,7 @@ public class AntPathMatcher {
 
     /**
      * Tokenize the given path pattern into parts, based on this matcher's settings.
-     * <p>Performs caching based on {@link #setCachePatterns}, delegating to
+     * Performs caching based on {@link #setCachePatterns}, delegating to
      * {@link #tokenizePath(String)} for the actual tokenization algorithm.
      *
      * @param pattern the pattern to tokenize
@@ -467,13 +467,13 @@ public class AntPathMatcher {
 
     /**
      * Build or retrieve an {@link AntPathStringMatcher} for the given pattern.
-     * <p>The default implementation checks this AntPathMatcher's internal cache
+     * The default implementation checks this AntPathMatcher's internal cache
      * (see {@link #setCachePatterns}), creating a new AntPathStringMatcher instance
      * if no cached copy is found.
-     * <p>When encountering too many patterns to cache at runtime (the threshold is 65536),
+     * When encountering too many patterns to cache at runtime (the threshold is 65536),
      * it turns the default cache off, assuming that arbitrary permutations of patterns
      * are coming in, with little chance for encountering a recurring pattern.
-     * <p>This method may be overridden to implement a custom cache strategy.
+     * This method may be overridden to implement a custom cache strategy.
      *
      * @param pattern the pattern to match against (never {@code null})
      * @return a corresponding AntPathStringMatcher (never {@code null})
@@ -503,7 +503,7 @@ public class AntPathMatcher {
 
     /**
      * Given a pattern and a full path, determine the pattern-mapped part.
-     * <p>For example: <ul>
+     * For example: <ul>
      * <li>'{@code /docs/cvs/commit.html}' and '{@code /docs/cvs/commit.html} -- ''</li>
      * <li>'{@code /docs/*}' and '{@code /docs/cvs/commit} -- '{@code cvs/commit}'</li>
      * <li>'{@code /docs/cvs/*.html}' and '{@code /docs/cvs/commit.html} -- '{@code commit.html}'</li>
@@ -512,7 +512,7 @@ public class AntPathMatcher {
      * <li>'{@code /*.html}' and '{@code /docs/cvs/commit.html} -- '{@code docs/cvs/commit.html}'</li>
      * <li>'{@code *.html}' and '{@code /docs/cvs/commit.html} -- '{@code /docs/cvs/commit.html}'</li>
      * <li>'{@code *}' and '{@code /docs/cvs/commit.html} -- '{@code /docs/cvs/commit.html}'</li> </ul>
-     * <p>Assumes that {@link #match} returns {@code true} for '{@code pattern}' and '{@code path}', but
+     * Assumes that {@link #match} returns {@code true} for '{@code pattern}' and '{@code path}', but
      * does <strong>not</strong> enforce this.
      *
      * @param pattern pattern
@@ -552,7 +552,7 @@ public class AntPathMatcher {
 
     /**
      * Combine two patterns into a new pattern.
-     * <p>This implementation simply concatenates the two patterns, unless
+     * This implementation simply concatenates the two patterns, unless
      * the first pattern contains a file extension match (e.g., {@code *.html}).
      * In that case, the second pattern will be merged into the first. Otherwise,
      * an {@code IllegalArgumentException} will be thrown.
@@ -628,7 +628,7 @@ public class AntPathMatcher {
     /**
      * Given a full path, returns a {@link Comparator} suitable for sorting patterns in order of
      * explicitness.
-     * <p>This{@code Comparator} will {@linkplain Collections#sort(List, Comparator) sort}
+     * This{@code Comparator} will {@linkplain Collections#sort(List, Comparator) sort}
      * a list so that more specific patterns (without uri templates or wild cards) come before
      * generic patterns. So given a list with the following patterns:
      * <ol>
@@ -636,7 +636,7 @@ public class AntPathMatcher {
      * <li>{@code /hotels/{hotel}}</li> <li>{@code /hotels/*}</li>
      * </ol>
      * the returned comparator will sort this list so that the order will be as indicated.
-     * <p>The full path given as parameter is used to test for exact matches. So when the given path
+     * The full path given as parameter is used to test for exact matches. So when the given path
      * is {@code /hotels/2}, the pattern {@code /hotels/2} will be sorted before {@code /hotels/1}.
      *
      * @param path the full path to use for comparison
@@ -649,8 +649,8 @@ public class AntPathMatcher {
 
     /**
      * Tests whether or not a string matches against a pattern via a {@link Pattern}.
-     * <p>The pattern may contain special characters: '*' means zero or more characters; '?' means one and
-     * only one character; '{' and '}' indicate a URI template pattern. For example <tt>/users/{user}</tt>.
+     * The pattern may contain special characters: '*' means zero or more characters; '?' means one and
+     * only one character; '{' and '}' indicate a URI template pattern. For example /users/{user}
      */
     protected static class AntPathStringMatcher {
 
@@ -737,7 +737,7 @@ public class AntPathMatcher {
     /**
      * The default {@link Comparator} implementation returned by
      * {@link #getPatternComparator(String)}.
-     * <p>In order, the most "generic" pattern is determined by the following:
+     * In order, the most "generic" pattern is determined by the following:
      * <ul>
      * <li>if it's null or a capture all pattern (i.e. it is equal to "/**")</li>
      * <li>if the other pattern is an actual match</li>

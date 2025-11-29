@@ -3,8 +3,8 @@ package com.github.netty.protocol.servlet;
 import com.github.netty.core.util.LoggerFactoryX;
 import com.github.netty.core.util.LoggerX;
 import com.github.netty.core.util.Wrapper;
+import jakarta.servlet.http.*;
 
-import javax.servlet.http.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,7 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ServletHttpSession implements HttpSession, Wrapper<Session> {
     private static final LoggerX logger = LoggerFactoryX.getLogger(ServletHttpSession.class);
-    private static Object sessionContext = null;
     private final List<HttpSessionBindingListener> httpSessionBindingListenerList = new ArrayList<>(2);
     private final ServletContext servletContext;
     String id;
@@ -80,24 +79,6 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
     }
 
     @Override
-    public HttpSessionContext getSessionContext() {
-        if (sessionContext == null) {
-            sessionContext = new HttpSessionContext() {
-                @Override
-                public HttpSession getSession(String sessionId) {
-                    return null;
-                }
-
-                @Override
-                public Enumeration<String> getIds() {
-                    return Collections.emptyEnumeration();
-                }
-            };
-        }
-        return (HttpSessionContext) servletContext;
-    }
-
-    @Override
     public Object getAttribute(String name) {
         Map<String, Object> attributeMap = this.attributeMap;
         if (attributeMap == null) {
@@ -106,7 +87,7 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         return attributeMap.get(name);
     }
 
-    @Override
+//    @Override
     public Object getValue(String name) {
         return getAttribute(name);
     }
@@ -120,7 +101,7 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         return Collections.enumeration(attributeMap.keySet());
     }
 
-    @Override
+//    @Override
     public String[] getValueNames() {
         Map<String, Object> attributeMap = this.attributeMap;
         if (attributeMap == null) {
@@ -174,7 +155,7 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         }
     }
 
-    @Override
+//    @Override
     public void putValue(String name, Object value) {
         setAttribute(name, value);
     }
@@ -206,7 +187,7 @@ public class ServletHttpSession implements HttpSession, Wrapper<Session> {
         }
     }
 
-    @Override
+//    @Override
     public void removeValue(String name) {
         removeAttribute(name);
     }

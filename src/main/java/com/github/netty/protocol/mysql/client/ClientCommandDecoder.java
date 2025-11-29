@@ -7,9 +7,7 @@ import io.netty.handler.codec.DecoderException;
 
 import java.util.List;
 
-/**
- *
- */
+
 public class ClientCommandDecoder extends AbstractPacketDecoder implements ClientDecoder {
     private Session session;
 

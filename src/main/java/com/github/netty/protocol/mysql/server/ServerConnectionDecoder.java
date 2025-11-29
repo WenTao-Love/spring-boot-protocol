@@ -9,9 +9,7 @@ import io.netty.util.CharsetUtil;
 import java.util.EnumSet;
 import java.util.List;
 
-/**
- *
- */
+
 public class ServerConnectionDecoder extends AbstractPacketDecoder implements ServerDecoder {
     private Session session;
 

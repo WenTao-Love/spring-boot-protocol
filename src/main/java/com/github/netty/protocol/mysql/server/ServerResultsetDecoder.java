@@ -10,9 +10,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- *
- */
+
 public class ServerResultsetDecoder extends AbstractPacketDecoder implements ServerDecoder {
 
     private State state = State.COLUMN_COUNT;

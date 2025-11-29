@@ -13,14 +13,24 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslContextBuilder;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
-import org.springframework.boot.web.server.*;
+import org.springframework.boot.ssl.SslBundle;
+import org.springframework.boot.ssl.SslBundles;
+import org.springframework.boot.web.server.Compression;
+import org.springframework.boot.web.server.ErrorPage;
+import org.springframework.boot.web.server.MimeMappings;
+import org.springframework.boot.web.server.Ssl;
+import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.util.ClassUtils;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
@@ -89,6 +99,7 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
         InetSocketAddress address = NettyTcpServerFactory.getServerSocketAddress(webServerFactory.getAddress(), webServerFactory.getPort());
         //Server port
         servletContext.setServerAddress(address);
+        servletContext.setInstanceFactory(new ApplicationInstanceFactory(servletContext.getClassLoader(), properties.getApplication()));
         servletContext.setEnableUrlServletAntPathMatcher(httpServlet.isEnableUrlServletAntPathMatcher());
         servletContext.setEnableUrlFilterAntPathMatcher(httpServlet.isEnableUrlFilterAntPathMatcher());
         servletContext.setMapperContextRootRedirectEnabled(httpServlet.isMapperContextRootRedirectEnabled());
@@ -116,7 +127,7 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
             super.setCompressionMimeTypes(compression.getMimeTypes().clone());
         }
         if (serverProperties != null) {
-            super.setMaxHeaderSize((SpringUtil.getNumberBytes(serverProperties, "getMaxHttpHeaderSize")).intValue());
+            super.setMaxHeaderSize((SpringUtil.getNumberBytes(serverProperties, "getMaxHttpRequestHeaderSize")).intValue());//maxHttpHeaderSize -> maxHttpRequestHeaderSize
         }
         Boolean enableH2 = httpServlet.getEnableH2();
         if (enableH2 == null) {
@@ -131,13 +142,14 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
         // https, wss
         Ssl ssl = webServerFactory.getSsl();
         if (ssl != null && ssl.isEnabled()) {
-            SslStoreProvider sslStoreProvider = webServerFactory.getSslStoreProvider();
+            SslBundles sslBundles = webServerFactory.getSslBundles();
+            SslBundle sslStoreProvider = sslBundles.getBundle(ssl.getBundle());
             SslContextBuilder sslContextBuilder = SpringUtil.newSslContext(ssl, sslStoreProvider);
             super.setSslContextBuilder(sslContextBuilder);
         }
 
         String location = null;
-        if (multipartProperties != null && multipartProperties.getEnabled()) {
+        if (multipartProperties != null && multipartProperties.isEnabled()) {
             Number maxRequestSize = SpringUtil.getNumberBytes(multipartProperties, "getMaxRequestSize");
             Number fileSizeThreshold = SpringUtil.getNumberBytes(multipartProperties, "getFileSizeThreshold");
 
@@ -157,6 +169,18 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
             ServletErrorPage servletErrorPage = new ServletErrorPage(errorPage.getStatusCode(), errorPage.getException(), errorPage.getPath());
             servletContext.getErrorPageManager().add(servletErrorPage);
         }
+
+        // cookieSameSite
+        List<CookieSameSiteSupplier> cookieSameSiteSuppliers = webServerFactory.getCookieSameSiteSuppliers();
+        servletContext.setCookieSameSiteSupplier((cookie, httpServletRequest) -> {
+            for (CookieSameSiteSupplier supplier : cookieSameSiteSuppliers) {
+                org.springframework.boot.web.server.Cookie.SameSite sameSite = supplier.getSameSite(cookie);
+                if (sameSite != null) {
+                    return sameSite.attributeValue();
+                }
+            }
+            return null;
+        });
     }
 
     /**

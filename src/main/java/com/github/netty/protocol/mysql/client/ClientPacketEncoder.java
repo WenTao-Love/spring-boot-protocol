@@ -24,9 +24,7 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Set;
 
-/**
- *
- */
+
 public class ClientPacketEncoder extends AbstractPacketEncoder<ClientPacket> {
     private Session session;
 

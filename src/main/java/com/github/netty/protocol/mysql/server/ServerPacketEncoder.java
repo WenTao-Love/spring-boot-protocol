@@ -24,9 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.nio.charset.Charset;
 import java.util.EnumSet;
 
-/**
- *
- */
+
 public class ServerPacketEncoder extends AbstractPacketEncoder<ServerPacket> {
     private Session session;
 

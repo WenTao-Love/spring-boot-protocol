@@ -11,13 +11,11 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 @RestController
 @RequestMapping
@@ -31,7 +29,7 @@ public class HttpController {
     private HelloRxjava3AsyncClient helloRxjava3AsyncClient;
 
     @RequestMapping("/sayHello")
-    public HelloData sayHello(String name){
+    public HelloData sayHello(@RequestParam(value = "name", required = false) String name){
         HelloDTO request = new HelloDTO();
         request.setId(1);
         request.setName("wang");
@@ -41,7 +39,7 @@ public class HttpController {
     }
 
     @RequestMapping("/sayHelloAsync")
-    public DeferredResult<HelloData> sayHelloAsync(String name) throws ExecutionException, InterruptedException {
+    public DeferredResult<HelloData> sayHelloAsync(@RequestParam(value = "name", required = false) String name) throws ExecutionException, InterruptedException {
         DeferredResult<HelloData> deferredResult = new DeferredResult<>();
         Subscriber<HelloData> rpcHandler = new Subscriber<HelloData>() {
             @Override
@@ -84,7 +82,7 @@ public class HttpController {
     }
 
     @RequestMapping("/sayHelloRxjava3Async")
-    public DeferredResult<HelloData> sayHelloRxjava3Async(String name){
+    public DeferredResult<HelloData> sayHelloRxjava3Async(@RequestParam(value = "name", required = false) String name){
         DeferredResult<HelloData> deferredResult = new DeferredResult<>();
         helloRxjava3AsyncClient.sayHello(name, 1)
                 .subscribe(

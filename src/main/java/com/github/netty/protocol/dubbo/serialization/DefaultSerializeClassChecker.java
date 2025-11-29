@@ -265,7 +265,7 @@ public class DefaultSerializeClassChecker implements AllowClassNotifyListener {
         /**
          * Return the default ClassLoader to use: typically the thread context ClassLoader, if available; the
          * ClassLoader that loaded the ClassUtils class will be used as fallback.
-         * <p>
+         * 
          * Call this method if you intend to use the thread context ClassLoader in a scenario where you absolutely need
          * a non-null ClassLoader reference: for example, for class path resource loading (but not necessarily for
          * <code>Class.forName</code>, which accepts a <code>null</code> ClassLoader
@@ -335,7 +335,7 @@ public class DefaultSerializeClassChecker implements AllowClassNotifyListener {
         /**
          * Resolve the given class name as primitive class, if appropriate, according to the JVM's naming rules for
          * primitive classes.
-         * <p>
+         * 
          * Also supports the JVM's internal class names for primitive arrays. Does
          * <i>not</i> support the "[]" suffix notation for primitive arrays; this is
          * only supported by {@link #forName}.

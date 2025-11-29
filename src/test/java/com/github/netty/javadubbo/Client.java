@@ -3,9 +3,6 @@ package com.github.netty.javadubbo;
 import com.github.netty.javadubbo.example.DemoAPI;
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.rpc.Filter;
-import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.model.ApplicationModel;
-import org.apache.dubbo.rpc.model.ScopeModel;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.net.URL;

@@ -1,8 +1,9 @@
 package com.github.netty.protocol.servlet;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
+
 import java.io.IOException;
 import java.util.Locale;
 
@@ -230,7 +231,7 @@ public class ServletHttpIncludeResponse extends HttpServletResponseWrapper {
      * description use <code>sendError(int, String)</code>.
      */
     @Deprecated
-    @Override
+//    @Override
     public void setStatus(int sc, String msg) {
 
     }

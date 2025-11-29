@@ -3,13 +3,13 @@ package com.github.netty.protocol.servlet.util;
 import com.github.netty.core.util.AbortPolicyWithReport;
 import com.github.netty.protocol.servlet.NettyMessageToServletRunnable;
 import com.github.netty.protocol.servlet.ServletHttpExchange;
+import jakarta.servlet.http.HttpServletResponse;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * http refusal to handle the strategy, send 503 status code
- * <p>
+ * 
  * Status code (503) indicating that the HTTP server is
  * temporarily overloaded, and unable to handle the request.
  *

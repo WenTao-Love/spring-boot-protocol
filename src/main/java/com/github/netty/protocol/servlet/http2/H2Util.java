@@ -1,11 +1,21 @@
 package com.github.netty.protocol.servlet.http2;
 
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.logging.LogLevel;
 import io.netty.util.AsciiString;
 
 public class H2Util {
+
+    public static Integer getStreamId(Channel channel) {
+        if (channel instanceof Http2StreamChannel) {
+            Http2FrameStream stream = ((Http2StreamChannel) channel).stream();
+            return stream.id();
+        } else {
+            return null;
+        }
+    }
 
     public static Http2ConnectionHandler newHttp2Handler(LogLevel logLevel,
                                                          int http2MaxReservedStreams, int maxContentLength, boolean enableContentCompression) {

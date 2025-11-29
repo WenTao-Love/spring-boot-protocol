@@ -3,19 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.wangzihaogithub</groupId>
-    <artifactId>spring-boot-protocol</artifactId>
+    <artifactId>spring-boot3-protocol</artifactId>
     <version>2.3.34</version>
     <packaging>jar</packaging>
 
-    <name>Spring Boot Protocol</name>
-    <description>Spring Boot Protocol</description>
+    <name>Spring Boot3 Protocol</name>
+    <description>Spring Boot3 Protocol</description>
     <url>https://github.com/wangzihaogithub/spring-boot-protocol.git</url>
-
-    <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>9</version>
-    </parent>
 
     <properties>
         <argLine>-Dfile.encoding=UTF-8</argLine>
@@ -24,12 +18,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- 编译时的编码 -->
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
-        <java.version>1.8</java.version>
+        <java.version>17</java.version>
 
-        <spring-boot.version>2.7.18</spring-boot.version>
-        <servlet-api.version>4.0.1</servlet-api.version>
-
-        <javax-websocket-api.version>1.1</javax-websocket-api.version>
+        <spring-boot.version>3.5.8</spring-boot.version>
 
         <jackson-annotations.version>2.20</jackson-annotations.version>
         <jackson.version>2.20.1</jackson.version>
@@ -64,20 +55,30 @@
     </developers>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api -->
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>${servlet-api.version}</version>
-            <!--            <scope>provided</scope>-->
-            <!--            <optional>true</optional>-->
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.1.0</version>
+            <scope>provided</scope>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>org.reactivestreams</groupId>-->
-        <!--            <artifactId>reactive-streams</artifactId>-->
-        <!--            <version>${reactive-streams.version}</version>-->
-        <!--            <scope>provided</scope>-->
-        <!--            <optional>true</optional>-->
-        <!--        </dependency>-->
+
+        <!-- https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-api -->
+        <dependency>
+            <groupId>jakarta.websocket</groupId>
+            <artifactId>jakarta.websocket-api</artifactId>
+            <version>2.2.0</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-client-api -->
+        <dependency>
+            <groupId>jakarta.websocket</groupId>
+            <artifactId>jakarta.websocket-client-api</artifactId>
+            <version>2.2.0</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
@@ -192,13 +193,6 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.websocket</groupId>
-            <artifactId>javax.websocket-api</artifactId>
-            <version>${javax-websocket-api.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
             <version>${spring-boot.version}</version>
@@ -208,7 +202,7 @@
         <dependency>
             <groupId>io.reactivex.rxjava3</groupId>
             <artifactId>rxjava</artifactId>
-            <version>3.0.3</version>
+            <version>3.1.12</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -217,7 +211,7 @@
         <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo</artifactId>
-            <version>3.2.5</version>
+            <version>3.3.6</version>
             <scope>provided</scope>
             <optional>true</optional>
             <exclusions>
@@ -240,10 +234,11 @@
             </exclusions>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.apache.dubbo/hessian-lite -->
         <dependency>
-            <groupId>com.alibaba</groupId>
+            <groupId>org.apache.dubbo</groupId>
             <artifactId>hessian-lite</artifactId>
-            <version>3.2.13</version>
+            <version>4.0.5</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -252,7 +247,7 @@
         <dependency>
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
-            <version>2.0.48</version>
+            <version>2.0.60</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -271,10 +266,11 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/cn.hutool/hutool-http -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-tomcat</artifactId>
-            <version>${spring-boot.version}</version>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-http</artifactId>
+            <version>5.8.41</version>
             <scope>test</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
@@ -288,7 +284,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-mqtt</artifactId>
-            <version>3.9.0</version>
+            <version>5.0.5</version>
             <scope>test</scope>
         </dependency>
 
@@ -297,6 +293,13 @@
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
             <version>1.6.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-fileupload2-jakarta-servlet6 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-fileupload2-jakarta-servlet6</artifactId>
+            <version>2.0.0-M4</version>
             <scope>test</scope>
         </dependency>
 
@@ -427,17 +430,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.14.1</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.codehaus.plexus</groupId>
                         <artifactId>plexus-compiler-javac</artifactId>
-                        <version>2.7</version>
+                        <version>2.16.1</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -445,7 +448,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -462,7 +465,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.2</version>
+                <version>3.12.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadoc</id>
@@ -477,15 +480,20 @@
                     <encoding>UTF-8</encoding>
                     <docencoding>UTF-8</docencoding>
                     <links>
-                        <link>http://docs.oracle.com/javase/8/docs/api</link>
+                        <link>https://docs.oracle.com/javase/17/docs/api</link>
                     </links>
+                    <!-- 降低 Javadoc 严格度, 如果你正在 deploy 到 Maven Central，这些警告在严格模式下也可能导致拒绝 -->
+                    <failOnWarnings>false</failOnWarnings>
+                    <additionalOptions>
+                        <additionalOption>-html5</additionalOption>
+                    </additionalOptions>
                 </configuration>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.6</version>
+                <version>3.2.8</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -499,7 +507,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.8.0</version>
+                <version>0.9.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
@@ -520,17 +528,17 @@
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-compiler-plugin</artifactId>
 
-                            <version>3.5.1</version>
+                            <version>3.14.1</version>
                             <configuration>
                                 <encoding>UTF-8</encoding>
-                                <source>1.8</source>
-                                <target>1.8</target>
+                                <source>17</source>
+                                <target>17</target>
                             </configuration>
                             <dependencies>
                                 <dependency>
                                     <groupId>org.codehaus.plexus</groupId>
                                     <artifactId>plexus-compiler-javac</artifactId>
-                                    <version>2.7</version>
+                                    <version>2.16.1</version>
                                 </dependency>
                             </dependencies>
                         </plugin>
@@ -538,7 +546,7 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-source-plugin</artifactId>
-                            <version>3.0.1</version>
+                            <version>3.3.1</version>
                             <executions>
                                 <execution>
                                     <id>attach-sources</id>
@@ -555,7 +563,7 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-javadoc-plugin</artifactId>
-                            <version>2.10.2</version>
+                            <version>3.12.0</version>
                             <executions>
                                 <execution>
                                     <id>attach-javadoc</id>
@@ -570,15 +578,20 @@
                                 <encoding>UTF-8</encoding>
                                 <docencoding>UTF-8</docencoding>
                                 <links>
-                                    <link>http://docs.oracle.com/javase/8/docs/api</link>
+                                    <link>https://docs.oracle.com/javase/17/docs/api</link>
                                 </links>
+                                <!-- 降低 Javadoc 严格度, 如果你正在 deploy 到 Maven Central，这些警告在严格模式下也可能导致拒绝 -->
+                                <failOnWarnings>false</failOnWarnings>
+                                <additionalOptions>
+                                    <additionalOption>-html5</additionalOption>
+                                </additionalOptions>
                             </configuration>
                         </plugin>
 
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-gpg-plugin</artifactId>
-                            <version>1.6</version>
+                            <version>3.2.8</version>
                             <executions>
                                 <execution>
                                     <id>sign-artifacts</id>
@@ -592,7 +605,7 @@
                         <plugin>
                             <groupId>org.sonatype.central</groupId>
                             <artifactId>central-publishing-maven-plugin</artifactId>
-                            <version>0.8.0</version>
+                            <version>0.9.0</version>
                             <extensions>true</extensions>
                             <configuration>
                                 <publishingServerId>central</publishingServerId>

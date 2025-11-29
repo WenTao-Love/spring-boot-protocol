@@ -307,7 +307,7 @@ public class NettyProperties implements Serializable {
         /**
          * 是否开启Websocket  upgrade: ws
          */
-        private boolean enableWebsocket = HttpConstants.EXIST_JAVAX_WEBSOCKET;
+        private boolean enableWebsocket = HttpConstants.EXIST_JAKARTA_WEBSOCKET;
         /**
          * 定时刷新缓冲区数据时间间隔(毫秒)
          * 当同时连接的客户端数量上千的时候开启(开启减少系统调用次数,批量写数据),否则不建议开启(因为http协议是阻塞协议,不快速返回数据会导致客户端不进行下次请求,反而降低吞吐量).
@@ -366,7 +366,7 @@ public class NettyProperties implements Serializable {
         private boolean enableUrlFilterAntPathMatcher = false;
 
         /**
-         * 是否开启DNS地址查询. true=开启 {@link javax.servlet.ServletRequest#getRemoteHost}
+         * 是否开启DNS地址查询. true=开启 {@link jakarta.servlet.ServletRequest#getRemoteHost}
          */
         private boolean enableNsLookup = false;
         /**

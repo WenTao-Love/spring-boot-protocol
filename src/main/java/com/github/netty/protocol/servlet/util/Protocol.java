@@ -10,17 +10,21 @@ import java.nio.charset.Charset;
 
 public enum Protocol {
     /**/
-    http1_1(false),
-    https1_1(false),
-    h2(true),
-    h2c(true),
-    h2c_prior_knowledge(true);
+    http1_1("http/1.1", false, false),
+    https1_1("http/1.1", false, true),
+    h2("h2", true, true),
+    h2c("h2c", true, false),
+    h2c_prior_knowledge("h2c", true, false);
 
     private static final ByteBuf CONNECTION_PREFACE = Unpooled.unreleasableBuffer(Unpooled.directBuffer(24).writeBytes("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(Charset.forName("UTF-8")))).asReadOnly();
+    private final String normalizationName;
     private final boolean http2;
+    private final boolean secure;
 
-    Protocol(boolean http2) {
+    Protocol(String normalizationName, boolean http2, boolean secure) {
+        this.normalizationName = normalizationName;
         this.http2 = http2;
+        this.secure = secure;
     }
 
     public static boolean isHttpPacket(ByteBuf packet) {
@@ -92,8 +96,15 @@ public enum Protocol {
                 clientFirstMsg, clientFirstMsg.readerIndex(), bytesRead);
     }
 
+    public String getNormalizationName() {
+        return normalizationName;
+    }
+
     public boolean isHttp2() {
         return http2;
     }
 
+    public boolean isSecure() {
+        return secure;
+    }
 }

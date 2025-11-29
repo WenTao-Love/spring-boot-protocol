@@ -7,7 +7,6 @@ import com.github.netty.core.util.IOUtil;
 import com.github.netty.protocol.DynamicProtocolChannelHandler;
 import com.github.netty.protocol.HttpServletProtocol;
 import com.github.netty.protocol.servlet.ServletContext;
-import com.github.netty.protocol.servlet.ServletRegistration;
 import com.github.netty.protocol.servlet.util.HttpLazyThreadPool;
 import com.github.netty.springboot.NettyProperties;
 import org.springframework.boot.web.reactive.server.ConfigurableReactiveWebServerFactory;
@@ -29,7 +28,7 @@ import java.util.function.Supplier;
 
 /**
  * Netty container factory TCP layer server factory
- * <p>
+ *
  * EmbeddedWebApplicationContext - createEmbeddedServletContainer
  * ImportAwareBeanPostProcessor
  *
@@ -122,6 +121,11 @@ public class NettyTcpServerFactory
             //JSP is not supported
             if (super.shouldRegisterJspServlet()) {
                 Jsp jsp = getJsp();
+            }
+
+            // webListener
+            for (String webListenerClassName : getWebListenerClassNames()) {
+                servletContext.addListener(webListenerClassName);
             }
 
             //Initialize the

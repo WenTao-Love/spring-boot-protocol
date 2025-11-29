@@ -23,9 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-/**
- *
- */
+
 public abstract class AbstractAuthPluginDataBuilder<B extends AbstractAuthPluginDataBuilder> {
     public final ByteBuf authPluginData = Unpooled.buffer();
     public final Set<CapabilityFlags> capabilities = CapabilityFlags.getImplicitCapabilities();

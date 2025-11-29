@@ -1,8 +1,9 @@
 package com.github.netty.protocol.servlet.websocket;
 
-import javax.websocket.*;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.*;
+import jakarta.websocket.server.ServerContainer;
+import jakarta.websocket.server.ServerEndpointConfig;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
@@ -68,7 +69,7 @@ public class WebSocketServerContainer implements WebSocketContainer, ServerConta
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * Currently, this implementation does not support any extensions.
      */
     @Override
@@ -97,7 +98,7 @@ public class WebSocketServerContainer implements WebSocketContainer, ServerConta
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * The default value for this implementation is -1.
      */
     @Override
@@ -107,7 +108,7 @@ public class WebSocketServerContainer implements WebSocketContainer, ServerConta
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * The default value for this implementation is -1.
      */
     @Override
@@ -280,4 +281,11 @@ public class WebSocketServerContainer implements WebSocketContainer, ServerConta
             }
         }
     }
+
+	@Override
+	public void upgradeHttpToWebSocket(Object httpServletRequest, Object httpServletResponse, ServerEndpointConfig sec,
+			Map<String, String> pathParameters) throws IOException, DeploymentException {
+		// TODO Auto-generated method stub
+		
+	}
 }

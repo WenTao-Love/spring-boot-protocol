@@ -1,8 +1,9 @@
 package com.github.netty.protocol.servlet.websocket;
 
-import javax.websocket.CloseReason;
-import javax.websocket.PongMessage;
-import javax.websocket.Session;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.PongMessage;
+import jakarta.websocket.Session;
+
 import java.nio.ByteBuffer;
 
 public interface WebSocketHandler {

@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 /**
  * Here the user business logic
- * <p>
+ * 
  * follows
  * 1. server to client {@link ServerHandshakePacket}
  * 2. client to server {@link ClientHandshakePacket}
@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  * 4. client to server query... {@link ClientQueryPacket}
  * 5. server to client {@link ServerOkPacket}
  * 6. any....
- * <p>
+ * 
  * Initial Handshake starts with server sending the `Initial Handshake Packet` {@link ServerHandshakePacket}.
  * After this, optionally,
  * client can request an SSL connection to be established with `SSL Connection Request Packet` TODO ,

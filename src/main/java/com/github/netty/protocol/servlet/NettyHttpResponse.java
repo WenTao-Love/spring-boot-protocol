@@ -7,12 +7,14 @@ import com.github.netty.protocol.servlet.util.*;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
-import javax.servlet.http.Cookie;
 import java.io.Flushable;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 
 import static com.github.netty.protocol.servlet.util.HttpHeaderConstants.CLOSE;
 import static com.github.netty.protocol.servlet.util.HttpHeaderConstants.cacheAsciiString;
@@ -27,9 +29,9 @@ public class NettyHttpResponse implements HttpResponse, Recyclable, Flushable {
     public static final HttpResponseStatus DEFAULT_STATUS = HttpResponseStatus.OK;
     private static final String APPEND_CONTENT_TYPE = ";" + HttpHeaderConstants.CHARSET + "=";
     protected final AtomicBoolean isSettingResponse = new AtomicBoolean(false);
+    private final HttpHeaders headers;
     private DecoderResult decoderResult;
     private HttpVersion version;
-    private final HttpHeaders headers;
     private HttpResponseStatus status;
     private LastHttpContent lastHttpContent;
     private ServletHttpExchange exchange;
@@ -303,7 +305,10 @@ public class NettyHttpResponse implements HttpResponse, Recyclable, Flushable {
         if (locale != null && !headers.contains(HttpHeaderConstants.CONTENT_LANGUAGE)) {
             headers.set(HttpHeaderConstants.CONTENT_LANGUAGE, HttpHeaderConstants.cacheAsciiString(locale.toLanguageTag()));
         }
+
         // Cookies processing
+        boolean cookiePartitioned = servletRequest.httpExchange.servletContext.cookiePartitioned;
+        BiFunction<Cookie, HttpServletRequest, String> cookieSameSiteSupplier = servletRequest.httpExchange.servletContext.cookieSameSiteSupplier;
         //Session is handled first. If it is a new Session and the Session id is not the same as the Session id passed by the request, it needs to be written through the Cookie
         ServletHttpSession httpSession = servletRequest.getSession(false);
         if (httpSession != null && httpSession.isNew()) {
@@ -312,7 +317,7 @@ public class NettyHttpResponse implements HttpResponse, Recyclable, Flushable {
                 sessionCookieName = HttpConstants.JSESSION_ID_COOKIE;
             }
             CharSequence sessionCookiePath = sessionCookieConfig.getPath();
-            if (sessionCookiePath == null || sessionCookiePath.length() == 0) {
+            if (sessionCookiePath == null || sessionCookiePath.isEmpty()) {
                 sessionCookiePath = HttpConstants.DEFAULT_SESSION_COOKIE_PATH;
             }
             if (buf[0] == null) {
@@ -321,7 +326,7 @@ public class NettyHttpResponse implements HttpResponse, Recyclable, Flushable {
                 buf[0].setLength(0);
             }
             CharSequence sessionCookieText = ServletUtil.encodeCookie(buf[0], sessionCookieName, httpSession.id, sessionCookieConfig.getMaxAge(),
-                    sessionCookiePath, sessionCookieConfig.domain, sessionCookieConfig.secure, sessionCookieConfig.httpOnly);
+                    sessionCookiePath, sessionCookieConfig.domain, sessionCookieConfig.secure, sessionCookieConfig.httpOnly, null, cookiePartitioned, sessionCookieConfig.attributes);
             headers.add(HttpHeaderConstants.SET_COOKIE, sessionCookieText);
         }
 
@@ -335,7 +340,8 @@ public class NettyHttpResponse implements HttpResponse, Recyclable, Flushable {
                 } else {
                     buf[0].setLength(0);
                 }
-                CharSequence cookieText = ServletUtil.encodeCookie(buf[0], cookie.getName(), cookie.getValue(), cookie.getMaxAge(), cookie.getPath(), cookie.getDomain(), cookie.getSecure(), cookie.isHttpOnly());
+                String sameSite = cookieSameSiteSupplier != null ? cookieSameSiteSupplier.apply(cookie, servletRequest) : null;
+                CharSequence cookieText = ServletUtil.encodeCookie(buf[0], cookie.getName(), cookie.getValue(), cookie.getMaxAge(), cookie.getPath(), cookie.getDomain(), cookie.getSecure(), cookie.isHttpOnly(), sameSite, cookiePartitioned, cookie.getAttributes());
                 headers.add(HttpHeaderConstants.SET_COOKIE, cookieText);
             }
         }

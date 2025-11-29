@@ -3,8 +3,8 @@ package com.github.netty.protocol.servlet.websocket;
 import com.github.netty.core.util.LoggerFactoryX;
 import com.github.netty.core.util.LoggerX;
 import io.netty.util.internal.PlatformDependent;
+import jakarta.websocket.*;
 
-import javax.websocket.*;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 

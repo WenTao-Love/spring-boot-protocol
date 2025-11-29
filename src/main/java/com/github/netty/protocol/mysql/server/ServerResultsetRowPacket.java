@@ -23,9 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- */
+
 public class ServerResultsetRowPacket extends AbstractMySqlPacket implements ServerPacket {
     private final List<String> values;
 

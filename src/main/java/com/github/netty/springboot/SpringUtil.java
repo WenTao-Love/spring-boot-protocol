@@ -7,8 +7,8 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import org.springframework.boot.ssl.SslBundle;
 import org.springframework.boot.web.server.Ssl;
-import org.springframework.boot.web.server.SslStoreProvider;
 import org.springframework.boot.web.server.WebServerException;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ResourceUtils;
@@ -50,7 +50,7 @@ public class SpringUtil {
         return (Number) value;
     }
 
-    public static SslContextBuilder newSslContext(Ssl ssl, SslStoreProvider sslStoreProvider) {
+    public static SslContextBuilder newSslContext(Ssl ssl, SslBundle sslStoreProvider) {
         SslContextBuilder builder = SslContextBuilder.forServer(getKeyManagerFactory(ssl, sslStoreProvider))
                 .trustManager(getTrustManagerFactory(ssl, sslStoreProvider));
         if (ssl.getEnabledProtocols() != null) {
@@ -67,7 +67,7 @@ public class SpringUtil {
         return builder;
     }
 
-    private static KeyManagerFactory getKeyManagerFactory(Ssl ssl, SslStoreProvider sslStoreProvider) {
+    private static KeyManagerFactory getKeyManagerFactory(Ssl ssl, SslBundle sslStoreProvider) {
         try {
             KeyStore keyStore = getKeyStore(ssl, sslStoreProvider);
             KeyManagerFactory keyManagerFactory = KeyManagerFactory
@@ -95,15 +95,15 @@ public class SpringUtil {
         }
     }
 
-    private static KeyStore getKeyStore(Ssl ssl, SslStoreProvider sslStoreProvider) throws Exception {
+    private static KeyStore getKeyStore(Ssl ssl, SslBundle sslStoreProvider) throws Exception {
         if (sslStoreProvider != null) {
-            return sslStoreProvider.getKeyStore();
+            return sslStoreProvider.getStores().getKeyStore();
         }
         return loadKeyStore(ssl.getKeyStoreType(), ssl.getKeyStoreProvider(), ssl.getKeyStore(),
                 getPassword(ssl.getKeyStorePassword()));
     }
 
-    private static TrustManagerFactory getTrustManagerFactory(Ssl ssl, SslStoreProvider sslStoreProvider) {
+    private static TrustManagerFactory getTrustManagerFactory(Ssl ssl, SslBundle sslStoreProvider) {
         try {
             KeyStore store = getTrustStore(ssl, sslStoreProvider);
             TrustManagerFactory trustManagerFactory = TrustManagerFactory
@@ -115,9 +115,9 @@ public class SpringUtil {
         }
     }
 
-    private static KeyStore getTrustStore(Ssl ssl, SslStoreProvider sslStoreProvider) throws Exception {
+    private static KeyStore getTrustStore(Ssl ssl, SslBundle sslStoreProvider) throws Exception {
         if (sslStoreProvider != null) {
-            return sslStoreProvider.getTrustStore();
+            return sslStoreProvider.getStores().getTrustStore();
         }
         return loadTrustStore(ssl.getTrustStoreType(), ssl.getTrustStoreProvider(), ssl.getTrustStore(),
                 ssl.getTrustStorePassword());

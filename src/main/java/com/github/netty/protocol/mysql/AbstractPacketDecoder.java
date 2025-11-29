@@ -12,9 +12,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- *
- */
+
 public abstract class AbstractPacketDecoder extends ByteToMessageDecoder implements Constants {
     private final int maxPacketSize;
 
