@@ -16,7 +16,7 @@
  */
 package jakarta.servlet.http;
 
-import java.io.Serial;
+//import java.io.Serial;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.BitSet;
@@ -57,7 +57,7 @@ public class Cookie implements Cloneable, Serializable {
 
     private static final String EMPTY_STRING = "";
 
-    @Serial
+//    @Serial
     private static final long serialVersionUID = 2L;
 
     /**
@@ -112,7 +112,7 @@ public class Cookie implements Cloneable, Serializable {
      *
      * @deprecated This is no longer required with RFC 6265
      */
-    @Deprecated(since = "Servlet 6.0", forRemoval = true)
+    @Deprecated
     public void setComment(String purpose) {
         // NO-OP
     }
@@ -127,7 +127,7 @@ public class Cookie implements Cloneable, Serializable {
      *
      * @deprecated This is no longer required with RFC 6265
      */
-    @Deprecated(since = "Servlet 6.0", forRemoval = true)
+    @Deprecated
     public String getComment() {
         return null;
     }
@@ -313,7 +313,7 @@ public class Cookie implements Cloneable, Serializable {
      *
      * @deprecated This is no longer required with RFC 6265
      */
-    @Deprecated(since = "Servlet 6.0", forRemoval = true)
+    @Deprecated
     public int getVersion() {
         return 0;
     }
@@ -328,7 +328,7 @@ public class Cookie implements Cloneable, Serializable {
      *
      * @deprecated This is no longer required with RFC 6265
      */
-    @Deprecated(since = "Servlet 6.0", forRemoval = true)
+    @Deprecated
     public void setVersion(int v) {
         // NO-OP
     }

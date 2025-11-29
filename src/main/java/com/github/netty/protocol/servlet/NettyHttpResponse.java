@@ -317,7 +317,7 @@ public class NettyHttpResponse implements HttpResponse, Recyclable, Flushable {
                 sessionCookieName = HttpConstants.JSESSION_ID_COOKIE;
             }
             CharSequence sessionCookiePath = sessionCookieConfig.getPath();
-            if (sessionCookiePath == null || sessionCookiePath.isEmpty()) {
+            if (sessionCookiePath == null || sessionCookiePath.length() == 0) {
                 sessionCookiePath = HttpConstants.DEFAULT_SESSION_COOKIE_PATH;
             }
             if (buf[0] == null) {

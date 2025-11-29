@@ -216,7 +216,7 @@ public class ServletUtil {
             header.append(domain);
         }
 
-        if (path != null && !path.isEmpty()) {
+        if (path != null && path.length() != 0) {
 //            validatePath(path);
             header.append("; Path=");
             header.append(path);
