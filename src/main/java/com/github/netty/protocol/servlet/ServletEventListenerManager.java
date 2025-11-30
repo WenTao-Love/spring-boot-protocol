@@ -352,7 +352,7 @@ public class ServletEventListenerManager {
         getServletRequestAttributeListenerList().add(listener);
     }
 
-    public void addHttpSessionIdListenerListener(HttpSessionIdListener listener) {
+    public void addHttpSessionIdListener(HttpSessionIdListener listener) {
         getHttpSessionIdListenerList().add(listener);
     }
 

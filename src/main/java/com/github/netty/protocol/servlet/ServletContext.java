@@ -115,6 +115,7 @@ public class ServletContext implements javax.servlet.ServletContext {
     private boolean mapperContextRootRedirectEnabled = true;
     private String serverHeader;
     private String servletContextName;
+    private InstanceFactory instanceFactory = InstanceFactory.DEFAULT;
     /**
      * output stream maxBufferBytes
      * Each buffer accumulate the maximum number of bytes (default 1M)
@@ -668,29 +669,29 @@ public class ServletContext implements javax.servlet.ServletContext {
     }
 
     @Override
-    public com.github.netty.protocol.servlet.ServletRegistration addServlet(String servletName, String className) {
+    public ServletRegistration addServlet(String servletName, String className) {
         try {
-            return addServlet(servletName, (Class<? extends Servlet>) Class.forName(className).newInstance());
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            Servlet instance = (Servlet) instanceFactory.newInstance(className);
+            return addServlet(servletName, instance);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addServlet error =" + e + ",servletName=" + servletName, e);
         }
     }
 
     @Override
-    public com.github.netty.protocol.servlet.ServletRegistration addServlet(String servletName, Servlet servlet) {
+    public ServletRegistration addServlet(String servletName, Servlet servlet) {
         Servlet newServlet = servletEventListenerManager.onServletAdded(servlet);
-        com.github.netty.protocol.servlet.ServletRegistration servletRegistration = new com.github.netty.protocol.servlet.ServletRegistration(servletName, newServlet != null ? newServlet : servlet, this, servletUrlMapper);
+        ServletRegistration servletRegistration = new ServletRegistration(servletName, newServlet != null ? newServlet : servlet, this, servletUrlMapper);
         servletRegistrationMap.put(servletName, servletRegistration);
         return servletRegistration;
     }
 
     @Override
-    public com.github.netty.protocol.servlet.ServletRegistration addServlet(String servletName, Class<? extends Servlet> servletClass) {
-        Servlet servlet = null;
+    public ServletRegistration addServlet(String servletName, Class<? extends Servlet> servletClass) {
+        Servlet servlet;
         try {
-            servlet = servletClass.getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+            servlet = instanceFactory.newInstance(servletClass);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("createServlet error =" + e + ",servletName=" + servletName, e);
         }
         return addServlet(servletName, servlet);
@@ -699,28 +700,28 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public <T extends Servlet> T createServlet(Class<T> clazz) throws ServletException {
         try {
-            return clazz.getConstructor().newInstance();
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
-                 IllegalAccessException e) {
+            return instanceFactory.newInstance(clazz);
+        } catch (ReflectiveOperationException e) {
             throw new ServletException("createServlet error =" + e + ",clazz=" + clazz, e);
         }
     }
 
     @Override
-    public com.github.netty.protocol.servlet.ServletRegistration getServletRegistration(String servletName) {
+    public ServletRegistration getServletRegistration(String servletName) {
         return servletRegistrationMap.get(servletName);
     }
 
     @Override
-    public Map<String, com.github.netty.protocol.servlet.ServletRegistration> getServletRegistrations() {
+    public Map<String, ServletRegistration> getServletRegistrations() {
         return servletRegistrationMap;
     }
 
     @Override
     public ServletFilterRegistration addFilter(String filterName, String className) {
         try {
-            return addFilter(filterName, (Class<? extends Filter>) Class.forName(className));
-        } catch (ClassNotFoundException e) {
+            Filter filter = (Filter) instanceFactory.newInstance(className);
+            return addFilter(filterName, filter);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addFilter error =" + e + ",filterName=" + filterName, e);
         }
     }
@@ -735,8 +736,9 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public ServletFilterRegistration addFilter(String filterName, Class<? extends Filter> filterClass) {
         try {
-            return addFilter(filterName, filterClass.newInstance());
-        } catch (InstantiationException | IllegalAccessException e) {
+            Filter filter = (Filter) instanceFactory.newInstance(filterName);
+            return addFilter(filterName, filter);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addFilter error =" + e, e);
         }
     }
@@ -744,8 +746,8 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public <T extends Filter> T createFilter(Class<T> clazz) throws ServletException {
         try {
-            return clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return instanceFactory.newInstance(clazz);
+        } catch (ReflectiveOperationException e) {
             throw new ServletException("createFilter error =" + e, e);
         }
     }
@@ -800,18 +802,23 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public void addListener(String className) {
         try {
-            addListener((Class<? extends EventListener>) Class.forName(className));
-        } catch (ClassNotFoundException e) {
+            EventListener filter = (EventListener) instanceFactory.newInstance(className);
+            addListener(filter);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addListener error =" + e + ",className=" + className, e);
         }
     }
 
     @Override
     public <T extends EventListener> void addListener(T listener) {
-        Objects.requireNonNull(listener);
+        Objects.requireNonNull(listener, "addListener");
 
         boolean addFlag = false;
         ServletEventListenerManager listenerManager = this.servletEventListenerManager;
+        if (listener instanceof ServletContainerInitializer) {
+            listenerManager.addServletContainerInitializer((ServletContainerInitializer) listener);
+            addFlag = true;
+        }
         if (listener instanceof ServletContextAttributeListener) {
             listenerManager.addServletContextAttributeListener((ServletContextAttributeListener) listener);
             addFlag = true;
@@ -825,7 +832,7 @@ public class ServletContext implements javax.servlet.ServletContext {
             addFlag = true;
         }
         if (listener instanceof HttpSessionIdListener) {
-            listenerManager.addHttpSessionIdListenerListener((HttpSessionIdListener) listener);
+            listenerManager.addHttpSessionIdListener((HttpSessionIdListener) listener);
             addFlag = true;
         }
         if (listener instanceof HttpSessionAttributeListener) {
@@ -849,8 +856,9 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public void addListener(Class<? extends EventListener> listenerClass) {
         try {
-            addListener(listenerClass.newInstance());
-        } catch (InstantiationException | IllegalAccessException e) {
+            EventListener eventListener = instanceFactory.newInstance(listenerClass);
+            addListener(eventListener);
+        } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("addListener listenerClass =" + listenerClass, e);
         }
     }
@@ -858,8 +866,8 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public <T extends EventListener> T createListener(Class<T> clazz) throws ServletException {
         try {
-            return clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return instanceFactory.newInstance(clazz);
+        } catch (ReflectiveOperationException e) {
             throw new ServletException("addListener clazz =" + clazz, e);
         }
     }
@@ -871,7 +879,7 @@ public class ServletContext implements javax.servlet.ServletContext {
 
     @Override
     public ClassLoader getClassLoader() {
-        return resourceManager.getClassLoader();
+        return classLoader;
     }
 
     @Override
@@ -920,5 +928,13 @@ public class ServletContext implements javax.servlet.ServletContext {
     @Override
     public javax.servlet.ServletRegistration.Dynamic addJspFile(String jspName, String jspFile) {
         throw new UnsupportedOperationException("addJspFile");
+    }
+
+    public InstanceFactory getInstanceFactory() {
+        return instanceFactory;
+    }
+
+    public void setInstanceFactory(InstanceFactory instanceFactory) {
+        this.instanceFactory = instanceFactory;
     }
 }
