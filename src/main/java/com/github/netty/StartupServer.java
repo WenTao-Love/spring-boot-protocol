@@ -136,13 +136,13 @@ public class StartupServer extends AbstractNettyServer {
     /**
      * 自适应写（maxBytesPerGatheringWrite）：
      * Netty 批量写数据时，如果想写的都写进去了，接下来的尝试写更多（调整 maxBytesPerGatheringWrite）。
-     * <p>
+     * 
      * 连续写（writeSpinCount）：
      * 同连接读一样，每个连接默认最多连续写 16 次，即使还有数据也暂时不处理了，先处理下一个连接。
-     * <p>
+     * 
      * 注册 OP_WRITE 事件
      * 如果 socket sendbuf 已经写不动，那就注册 OP_WRITE 事件。当触发 OP_WRITE 事件时，则取消 OP_WRITE 事件，并继续写。
-     * <p>
+     * 
      * 高低水位线（writeBufferWaterMark）
      * Netty 待写数据太多，超过一定的水位线（writeBufferWaterMark.high()），会将可写的标志位改成
      * false ，让应用自己做决定要不要发送数据了。

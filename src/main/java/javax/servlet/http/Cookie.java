@@ -137,16 +137,16 @@ public class Cookie implements Cloneable, Serializable {
 
     /**
      * Constructs a cookie with a specified name and value.
-     * <p>
+     * 
      * The name must conform to RFC 2109. That means it can contain only ASCII
      * alphanumeric characters and cannot contain commas, semicolons, or white
      * space or begin with a $ character. The cookie's name cannot be changed
      * after creation.
-     * <p>
+     * 
      * The value can be anything the server chooses to send. Its value is
      * probably of interest only to the server. The cookie's value can be
      * changed after creation with the <code>setValue</code> method.
-     * <p>
+     * 
      * By default, cookies are created according to the Netscape cookie
      * specification. The version can be changed with the
      * <code>setVersion</code> method.
@@ -203,7 +203,7 @@ public class Cookie implements Cloneable, Serializable {
 
     /**
      * Specifies the domain within which this cookie should be presented.
-     * <p>
+     * 
      * The form of the domain name is specified by RFC 2109. A domain name
      * begins with a dot (<code>.foo.com</code>) and means that the cookie is
      * visible to servers in a specified Domain Name System (DNS) zone (for
@@ -233,11 +233,11 @@ public class Cookie implements Cloneable, Serializable {
 
     /**
      * Sets the maximum age of the cookie in seconds.
-     * <p>
+     * 
      * A positive value indicates that the cookie will expire after that many
      * seconds have passed. Note that the value is the <i>maximum</i> age when
      * the cookie will expire, not the cookie's current age.
-     * <p>
+     * 
      * A negative value means that the cookie is not stored persistently and
      * will be deleted when the Web browser exits. A zero value causes the
      * cookie to be deleted.
@@ -266,13 +266,13 @@ public class Cookie implements Cloneable, Serializable {
     /**
      * Specifies a path for the cookie to which the client should return the
      * cookie.
-     * <p>
+     * 
      * The cookie is visible to all the pages in the directory you specify, and
      * all the pages in that directory's subdirectories. A cookie's path must
      * include the servlet that set the cookie, for example, <i>/catalog</i>,
      * which makes the cookie visible to all directories on the server under
      * <i>/catalog</i>.
-     * <p>
+     * 
      * Consult RFC 2109 (available on the Internet) for more information on
      * setting path names for cookies.
      *
@@ -299,7 +299,7 @@ public class Cookie implements Cloneable, Serializable {
     /**
      * Indicates to the browser whether the cookie should only be sent using a
      * secure protocol, such as HTTPS or SSL.
-     * <p>
+     * 
      * The default value is <code>false</code>.
      *
      * @param flag if <code>true</code>, sends the cookie from the browser to the
@@ -335,7 +335,7 @@ public class Cookie implements Cloneable, Serializable {
     /**
      * Assigns a new value to a cookie after the cookie is created. If you use a
      * binary value, you may want to use BASE64 encoding.
-     * <p>
+     * 
      * With Version 0 cookies, values should not contain white space, brackets,
      * parentheses, equals signs, commas, double quotes, slashes, question
      * marks, at signs, colons, and semicolons. Empty values may not behave the
@@ -367,7 +367,7 @@ public class Cookie implements Cloneable, Serializable {
      * Sets the version of the cookie protocol this cookie complies with.
      * Version 0 complies with the original Netscape cookie specification.
      * Version 1 complies with RFC 2109.
-     * <p>
+     * 
      * Since RFC 2109 is still somewhat new, consider version 1 as experimental;
      * do not use it yet on production sites.
      *

@@ -43,7 +43,7 @@ public class CaseInsensitiveKeyMap<V> extends AbstractMap<String, V> {
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * <b>Use this method with caution</b>. If the input Map contains duplicate
      * keys when the keys are compared in a case insensitive manner then some
      * values will be lost when inserting via this method.

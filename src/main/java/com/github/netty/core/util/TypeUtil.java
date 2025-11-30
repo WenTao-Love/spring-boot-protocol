@@ -371,11 +371,11 @@ public class TypeUtil {
     }
 
     /**
-     * <p>Checks if the String contains only unicode digits.
-     * A decimal point is not a unicode digit and returns false.</p>
+     * Checks if the String contains only unicode digits.
+     * A decimal point is not a unicode digit and returns false.
      *
-     * <p><code>null</code> will return <code>false</code>.
-     * An empty String ("") will return <code>false</code>.</p>
+     * <code>null</code> will return <code>false</code>.
+     * An empty String ("") will return <code>false</code>.
      *
      * <pre>
      * StringUtils.isNumeric(null)   = false

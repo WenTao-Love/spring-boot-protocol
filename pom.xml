@@ -214,7 +214,7 @@
                     <encoding>UTF-8</encoding>
                     <docencoding>UTF-8</docencoding>
                     <links>
-                        <link>http://docs.oracle.com/javase/8/docs/api</link>
+                        <link>https://docs.oracle.com/javase/8/docs/api</link>
                     </links>
                 </configuration>
             </plugin>
@@ -222,7 +222,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.6</version>
+                <version>3.2.8</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -236,7 +236,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.8.0</version>
+                <version>0.9.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
@@ -307,7 +307,7 @@
                                 <encoding>UTF-8</encoding>
                                 <docencoding>UTF-8</docencoding>
                                 <links>
-                                    <link>http://docs.oracle.com/javase/8/docs/api</link>
+                                    <link>https://docs.oracle.com/javase/17/docs/api</link>
                                 </links>
                             </configuration>
                         </plugin>
@@ -315,7 +315,7 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-gpg-plugin</artifactId>
-                            <version>1.6</version>
+                            <version>3.2.8</version>
                             <executions>
                                 <execution>
                                     <id>sign-artifacts</id>
@@ -329,7 +329,7 @@
                         <plugin>
                             <groupId>org.sonatype.central</groupId>
                             <artifactId>central-publishing-maven-plugin</artifactId>
-                            <version>0.8.0</version>
+                            <version>0.9.0</version>
                             <extensions>true</extensions>
                             <configuration>
                                 <publishingServerId>central</publishingServerId>
@@ -346,4 +346,5 @@
     <!--gpg &#45;&#45;keyserver hkp://keyserver.ubuntu.com:11371 &#45;&#45;send-keys DF6BD576-->
     <!--gpg &#45;&#45;keyserver hkp://pool.sks-keyservers.net &#45;&#45;send-keys A12DCF7DF1-->
     <!--JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8-->
+    <!-- jar -cvf bundle.jar spring-boot-protocol-* -->
 </project>
