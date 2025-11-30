@@ -141,7 +141,7 @@ github地址 : https://github.com/wangzihaogithub/spring-boot-protocol
 
 ### 使用方法 - 选择你需要的版本
 
-#### springboot3x（此包同时支持排除springboot依赖，自己new StartupServer(8080).start() ）
+#### springboot3x（此包不强依赖springboot，支持自己new StartupServer(8080).start() ）
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/spring-boot3-protocol.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:spring-boot3-protocol)
 
@@ -155,7 +155,7 @@ github地址 : https://github.com/wangzihaogithub/spring-boot-protocol
 </dependency>
 ```
 
-#### springboot2x（此包同时支持排除springboot依赖，自己new StartupServer(8080).start() ）
+#### springboot2x（此包不强依赖springboot，支持自己new StartupServer(8080).start() ）
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/spring-boot-protocol.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:spring-boot-protocol)
 
@@ -169,7 +169,7 @@ github地址 : https://github.com/wangzihaogithub/spring-boot-protocol
 </dependency>
 ```
 
-#### 纯净版，无多余依赖 
+#### javax-servlet纯净版，无多余依赖 
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/netty-servlet.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:netty-servlet)
 
@@ -182,6 +182,8 @@ github地址 : https://github.com/wangzihaogithub/spring-boot-protocol
   <version>2.3.34</version>
 </dependency>
 ```
+
+#### jakarta-servlet纯净版，无多余依赖
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.wangzihaogithub/netty-servlet-jakarta.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.github.wangzihaogithub%20AND%20a:netty-servlet-jakarta)
 
