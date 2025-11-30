@@ -41,7 +41,7 @@ import java.util.function.LongSupplier;
  * ch.write(new {@link io.netty.handler.stream.ChunkedFile}(new File("video.mkv"));
  * </pre>
  *
- * <h3>Sending a stream which generates a chunk intermittently</h3>
+ * Sending a stream which generates a chunk intermittently
  * 
  * Some {@link ChunkedInput} generates a chunk on a certain event or timing.
  * Such {@link ChunkedInput} implementation often returns {@code null} on
