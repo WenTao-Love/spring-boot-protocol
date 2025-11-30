@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- * <p>This Map implementation is generally not thread-safe. It is primarily designed
+ * This Map implementation is generally not thread-safe. It is primarily designed
  * for data structures exposed from request objects, for use in a single thread only.
  *
  * @param <K> the key type

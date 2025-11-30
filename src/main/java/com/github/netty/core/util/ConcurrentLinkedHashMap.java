@@ -26,7 +26,7 @@ import static java.util.Collections.*;
  * exceeded its capacity. Unlike the <tt>Java Collections Framework</tt>, this
  * map does not have a publicly visible constructor and instances are created
  * through a {@link Builder}.
- * <p>
+ * 
  * An entry is evicted from the map when the <tt>weighted capacity</tt> exceeds
  * its <tt>maximum weighted capacity</tt> threshold. A {@link Weigher} instance
  * determines how many units of capacity that a value consumes. The default
@@ -36,7 +36,7 @@ import static java.util.Collections.*;
  * by the total number of elements that it contains. A change to a value that
  * modifies its weight requires that an update operation is performed on the
  * map.
- * <p>
+ * 
  * An {@link EvictionListener} may be supplied for notification when an entry
  * is evicted from the map. This listener is invoked on a caller's thread and
  * will not block other threads from operating on the map. An implementation
@@ -45,18 +45,18 @@ import static java.util.Collections.*;
  * safety and a fast turn around time can be achieved by performing the
  * operation asynchronously, such as by submitting a task to an
  * {@link ExecutorService}.
- * <p>
+ * 
  * The <tt>concurrency level</tt> determines the number of threads that can
  * concurrently modify the table. Using a significantly higher or lower value
  * than needed can waste space or lead to thread contention, but an estimate
  * within an order of magnitude of the ideal value does not usually have a
  * noticeable impact. Because placement in hash tables is essentially random,
  * the actual concurrency will vary.
- * <p>
+ * 
  * This class and its views and iterators implement all of the
  * <em>optional</em> methods of the {@link Map} and {@link Iterator}
  * interfaces.
- * <p>
+ * 
  * Like {@link Hashtable} but unlike {@link HashMap}, this class
  * does <em>not</em> allow <tt>null</tt> to be used as a key or value. Unlike
  * {@link LinkedHashMap}, this class does <em>not</em> provide

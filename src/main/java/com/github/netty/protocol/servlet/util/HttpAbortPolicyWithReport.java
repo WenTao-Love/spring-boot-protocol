@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * http refusal to handle the strategy, send 503 status code
- * <p>
+ * 
  * Status code (503) indicating that the HTTP server is
  * temporarily overloaded, and unable to handle the request.
  *

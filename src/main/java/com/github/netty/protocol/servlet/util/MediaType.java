@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Media type (provides parsing and retrieval)
- * <p>
+ * 
  * example,: MediaType type = MediaType.parseFast(text/html;charset=utf-8);
  *
  * @author wangzihao

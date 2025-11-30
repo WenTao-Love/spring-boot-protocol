@@ -25,7 +25,7 @@ import java.util.function.LongSupplier;
  * transfer requires complicated state management in a {@link ChannelHandler}
  * implementation.  {@link ChunkedWriteHandler} manages such complicated states
  * so that you can send a large data stream without difficulties.
- * <p>
+ * 
  * To use {@link ChunkedWriteHandler} in your application, you have to insert
  * a new {@link ChunkedWriteHandler} instance:
  * <pre>
@@ -42,7 +42,7 @@ import java.util.function.LongSupplier;
  * </pre>
  *
  * <h3>Sending a stream which generates a chunk intermittently</h3>
- * <p>
+ * 
  * Some {@link ChunkedInput} generates a chunk on a certain event or timing.
  * Such {@link ChunkedInput} implementation often returns {@code null} on
  * {@link ChunkedInput#readChunk(ByteBufAllocator)}, resulting in the indefinitely suspended

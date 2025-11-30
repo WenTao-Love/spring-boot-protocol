@@ -4,13 +4,13 @@ import java.util.*;
 
 /**
  * 不敏感大小写的map
- * <p>
+ * 
  * A Map implementation that uses case-insensitive (using {@link
  * Locale#ENGLISH}) strings as keys.
- * <p>
+ * 
  * Keys must be instances of {@link String}. Note that this means that
  * <code>null</code> keys are not permitted.
- * <p>
+ * 
  * This implementation is not thread-safe.
  *
  * @param <V> Type of values placed in this Map.
