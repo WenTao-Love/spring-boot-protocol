@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 /**
  * java类文件
- * <p>
+ * 
  * ClassFile {
  * u4             magic;
  * u2             minor_version;
@@ -32,7 +32,7 @@ import java.util.stream.Stream;
  * u2             attributes_count;
  * attribute_info attributes[attributes_count];
  * }
- * <p>
+ * 
  * class文件结构.官方文档 https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html
  * 参考文件 com.sun.org.apache.bcel.internal.classfile.ClassParser
  *
@@ -1845,7 +1845,7 @@ public class JavaClassFile {
              * {@link #OBJECT} and {@link #INTERNAL} types, and a field or method descriptor in the other
              * cases.
              *
-             * <p>For {@link #OBJECT} types, this field also contains the descriptor: the characters in
+             * For {@link #OBJECT} types, this field also contains the descriptor: the characters in
              * [{@link #valueBegin},{@link #valueEnd}) contain the internal name, and those in [{@link
              * #valueBegin} - 1, {@link #valueEnd} + 1) contain the descriptor.
              */
@@ -3025,7 +3025,7 @@ public class JavaClassFile {
 
         /**
          * An expanded frame.
-         * <p>
+         * 
          * A flag to expand the stack map frames. By default stack map frames are visited in their
          * original format (i.e. "expanded" for classes whose version is less than V1_6, and "compressed"
          * for the other classes). If this flag is set, stack map frames are always visited in expanded
@@ -4100,10 +4100,10 @@ public class JavaClassFile {
             /**
              * 0x0010 ( ACC_FINAL)
              * 表示已声明形式参数 final。
-             * <p>
+             * 
              * 0x1000 ( ACC_SYNTHETIC)
              * 表示根据编写源代码的语言规范（JLS §13.1），形参未在源代码中显式或隐式声明。（形参是生成此class文件的编译器的实现工件 。）
-             * <p>
+             * 
              * 0x8000 ( ACC_MANDATED)
              * 表示根据编写源代码的语言规范（JLS §13.1），在源代码中隐式声明了形参。
              */

@@ -29,9 +29,9 @@ import java.util.function.Supplier;
  * @author wangzihao
  * @see com.github.netty.springboot.client.NettyRpcLoadBalanced#chooseAddress(NettyRpcRequest)
  * @see com.github.netty.protocol.nrpc.RpcClient
- * <p>
+ * 
  * -----------------------------------------------------------------------
- * <p>
+ * 
  * Support rpc method annotation list.
  * @see NRpcParam
  * @see RequestMapping

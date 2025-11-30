@@ -20,7 +20,7 @@ import com.github.netty.protocol.mqtt.subscriptions.Topic;
 
 /**
  * ACL checker.
- * <p>
+ * 
  * Create an authorizator that matches topic names with same grammar of subscriptions. The # is
  * always a terminator and its the multilevel matcher. The + sign is the single level matcher.
  */

@@ -55,7 +55,7 @@ import java.util.stream.Stream;
 /**
  * 一个客户端维护一个http长连接
  *
- * <p>
+ * 
  * An HTTP2 client that allows you to send HTTP2 frames to a server using HTTP1-style approaches
  * (via {@link InboundHttp2ToHttpAdapter}). Inbound and outbound
  * frames are logged.
@@ -63,7 +63,7 @@ import java.util.stream.Stream;
  * a "Hello World" response.
  * See the ./http2/helloworld/frame/client/ example for a HTTP2 client example which does not use
  * HTTP1-style objects and patterns.
- * <p>
+ * 
  * 1. 包协议
  * +-----------------------------------------------------------------------------+
  * |                 Length (24) 帧总长度                                       |
@@ -74,17 +74,17 @@ import java.util.stream.Stream;
  * +=+===========================================================------------==+
  * | Frame Payload (0...) ...不同的FrameTypes类型,不同的字段.{@link Http2Frame}   |
  * +---------------------------------------------------------------------------+
- * <p>
+ * 
  * Length：帧有效载荷的长度，表示为无符号的24位整数。除非接收方为SETTINGS_MAX_FRAME_SIZE设置了较大的值，否则不得发送大于2 ^ 14（16,384）的值。帧头的9个八位字节不包含在该值中。
- * <p>
+ * 
  * Type：帧的8位类型。帧类型决定帧的格式和语义。实现必须忽略并丢弃任何类型未知的帧。
- * <p>
+ * 
  * Flags：为帧类型专用的布尔标志保留的8位字段。标志被分配特定于指定帧类型的语义。没有为特定帧类型定义语义的标志务必被忽略，并且在发送时务必保持未设置（0x0）。
- * <p>
+ * 
  * R：保留的1位字段。该位的语义是未定义的，并且该位必须在发送时保持未设置（0x0），并且在接收时必须忽略。
- * <p>
+ * 
  * Stream Identifier：流标识符 表示为一个无符号的31位整数。值0x0保留给与整个连接相关联的帧，而不是单个流。
- * <p>
+ * 
  * 详情参看RFC标准 https://www.rfc-editor.org/rfc/pdfrfc/rfc7540.txt.pdf
  *
  * @author wangzihaogithub 2021年2月3日14:11:17

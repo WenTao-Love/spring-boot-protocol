@@ -31,9 +31,9 @@ import java.util.function.Supplier;
 
 /**
  * Mysql Protocol Payload
- * <p>
+ * 
  * mysql client will not send the first packet, the server will, after receiving the link, immediately return the authentication information
- * <p>
+ * 
  * |-------------------------------------------------------------------------------
  * |Type	    |   Name	       |  Description
  * |-------------------------------------------------------------------------------

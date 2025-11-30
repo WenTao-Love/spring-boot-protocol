@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Media type (provides parsing and retrieval)
- * <p>
+ * 
  * example,: MediaType type = MediaType.parseFast(text/html;charset=utf-8);
  *
  * @author wangzihao
@@ -527,7 +527,7 @@ public class MediaType {
          * buggy clients (libwww-perl for DIGEST auth) are known to send quoted LHEX
          * when the specification requires just LHEX.
          *
-         * <p>
+         * 
          * LHEX are, literally, lower-case hexadecimal digits. This implementation
          * allows for upper-case digits as well, converting the returned value to
          * lower-case.

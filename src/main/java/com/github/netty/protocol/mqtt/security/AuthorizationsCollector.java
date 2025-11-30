@@ -24,7 +24,7 @@ import java.util.*;
 /**
  * Used by the ACLFileParser to push all authorizations it finds. ACLAuthorizator uses it in read
  * mode to check it topics matches the ACLs.
- * <p>
+ * 
  * Not thread safe.
  */
 class AuthorizationsCollector implements IAuthorizatorPolicy {

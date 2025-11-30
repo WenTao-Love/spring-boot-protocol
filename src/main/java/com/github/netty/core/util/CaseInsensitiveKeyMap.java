@@ -4,13 +4,13 @@ import java.util.*;
 
 /**
  * 不敏感大小写的map
- * <p>
+ * 
  * A Map implementation that uses case-insensitive (using {@link
  * Locale#ENGLISH}) strings as keys.
- * <p>
+ * 
  * Keys must be instances of {@link String}. Note that this means that
  * <code>null</code> keys are not permitted.
- * <p>
+ * 
  * This implementation is not thread-safe.
  *
  * @param <V> Type of values placed in this Map.
@@ -43,7 +43,7 @@ public class CaseInsensitiveKeyMap<V> extends AbstractMap<String, V> {
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * <b>Use this method with caution</b>. If the input Map contains duplicate
      * keys when the keys are compared in a case insensitive manner then some
      * values will be lost when inserting via this method.

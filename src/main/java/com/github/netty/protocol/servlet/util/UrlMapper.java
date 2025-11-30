@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * Url mapping
- * <p>
+ * 
  * Mapping specification
  * In the web application deployment descriptor, the following syntax is used to define the mapping:
  * ■  A string starting with the '/' character and ending with the '/*' suffix is used for path matching.
@@ -17,13 +17,13 @@ import java.util.*;
  * The following path and path information is null。
  * ■  So other strings are used only for exact matches。
  * Deployment will fail if a valid web.xml (after merging information from fragments and annotations) contains arbitrary url-patterns mapped to multiple servlets.
- * <p>
- * <p>
+ * 
+ * 
  * Sample mapping set
  * Look at the following set of mappings：
  * Table 12-1 sample mapping set
  * Path Pattern            Servlet
- * <p>
+ * 
  * /foo/bar/*              servlet1
  * /baz/*                  servlet2
  * /catalog                servlet3
@@ -31,7 +31,7 @@ import java.util.*;
  * Will produce the following behavior：
  * Table 12-2. The incoming path is applied to the sample map
  * Incoming Path           Servlet Handling Request
- * <p>
+ * 
  * /foo/bar/index.html     servlet1
  * /foo/bar/index.bop      servlet1
  * /baz                    servlet2

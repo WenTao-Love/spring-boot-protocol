@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 生产者测试 (一直运行)  注: mqtt-broker端口=8080
- * <p>
+ * 
  * 用于测试qps性能, 直接右键运行即可
  * MQTT协议
  * @author wangzihao

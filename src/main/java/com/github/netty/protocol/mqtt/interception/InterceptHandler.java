@@ -21,9 +21,9 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 
 /**
  * This interface is used to inject code for intercepting broker events.
- * <p>
+ * 
  * The events can act only as observers.
- * <p>
+ * 
  * Almost every method receives a subclass of {@link MqttMessage}, except <code>onDisconnect</code>
  * that receives the client id string and <code>onSubscribe</code> and <code>onUnsubscribe</code>
  * that receive a {@link Subscription} object.

@@ -10,7 +10,7 @@ import java.util.function.Function;
 
 /**
  * 定时过期Map 会自动过期删除
- * <p>
+ * 
  * 支持项 ：    1.定时过期(过期事件通知) {@link #setOnExpiryConsumer(Consumer)} {@link #onExpiry(Node)}
  * 2. LRU淘汰机制(淘汰事件通知) {@link #setOnEvictionConsumer(Consumer)} {@link #onEviction(Node)}
  * 3. Map操作
@@ -18,7 +18,7 @@ import java.util.function.Function;
  * 5. gc回收 Reference(Weak,Soft,strong). {@link #ExpiryLRUMap(int, long, long, ConcurrentLinkedHashMap.Weigher, Class)}
  * 6. 统计功能(miss, hit) {@link #getHitCount()} {@link #getMissCount()}
  * 7. null值替换, 防止缓存击穿 {@link #setReplaceNullValueFlag(boolean)} {@link #NULL} if(data == ExpiryLRUMap.NULL)
- * <p>
+ * 
  * 常用场景 ： localCache
  *
  * @author wangzihao

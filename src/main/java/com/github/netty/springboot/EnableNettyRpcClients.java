@@ -13,7 +13,7 @@ import java.lang.annotation.*;
  * Enable embedded Rpc client protocol
  * It will enable.
  * 1. rpc client protocol. {@link NettyRpcClientBeanDefinitionRegistrar}
- * <p>
+ * 
  * You must implement the interface. Returns ip address of the server. {@link NettyRpcLoadBalanced#chooseAddress(NettyRpcRequest)}
  *
  * @author wangzihao 2019-11-2 00:58:38

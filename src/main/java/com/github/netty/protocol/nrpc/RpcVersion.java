@@ -41,14 +41,14 @@ public enum RpcVersion {
 
     /**
      * Whether the NRPC protocol to support
-     * <p>
+     * 
      * Request Packet (note:  1 = request type)
      * -+------8B--------+--1B--+--1B--+------2B------+-----4B-----+------1B--------+-----length-----+------1B-------+---length----+-----2B------+-------length-------------+
      * | header/version | type | ACK   | total length | Request ID | service length | service name   | method length | method name | data length |         data             |
      * |   NRPC/010     |  1   | 1    |     55       |     1      |       8        | "/sys/user"    |      7        |  getUser    |     24      | {"age":10,"name":"wang"} |
      * -+----------------+------+------+--------------+------------+----------------+----------------+---------------+-------------+-------------+--------------------------+
-     * <p>
-     * <p>
+     * 
+     * 
      * Response Packet (note: 2 = response type)
      * -+------8B--------+--1B--+--1B--+------2B------+-----4B-----+---1B---+--------1B------+--length--+---1B---+-----2B------+----------length----------+
      * | header/version | type | ACK   | total length | Request ID | status | message length | message  | encode | data length |         data             |

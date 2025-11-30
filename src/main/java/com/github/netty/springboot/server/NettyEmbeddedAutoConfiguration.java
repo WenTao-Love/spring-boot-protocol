@@ -161,6 +161,7 @@ public class NettyEmbeddedAutoConfiguration {
 
     /**
      * Add the MQTT protocol registry
+     * @param beanFactory beanFactory
      *
      * @return MqttProtocol
      */

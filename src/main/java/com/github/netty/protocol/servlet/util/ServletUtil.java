@@ -128,18 +128,6 @@ public class ServletUtil {
         return encoding.trim();
     }
 
-    /**
-     * Encodes the specified cookie into a Set-Cookie header value.
-     *
-     * @param cookieName  cookieName
-     * @param cookieValue cookieValue
-     * @param maxAge      maxAge
-     * @param path        path
-     * @param domain      domain
-     * @param secure      secure
-     * @param httpOnly    httpOnly
-     * @return a single Set-Cookie header value
-     */
     public static CharSequence encodeCookie(StringBuilder buf, String cookieName, String cookieValue, int maxAge, CharSequence path, String domain, boolean secure, boolean httpOnly) {
         buf.append(cookieName);
         buf.append((char) HttpConstants.EQUALS);
@@ -517,6 +505,8 @@ public class ServletUtil {
      *
      * @param testPath                   URL mapping being checked
      * @param contextRelativeRequestPath Context-relative request path of this request
+     * @return <code>true</code> if the context-relative request path matches the requirements of the specified filter
+     * mapping; otherwise, return <code>false</code>.
      */
     public static boolean matchFiltersURL(String testPath, String contextRelativeRequestPath) {
         // Case 1 - Exact Match

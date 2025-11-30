@@ -68,7 +68,7 @@ public class WebSocketServerContainer implements WebSocketContainer, ServerConta
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * Currently, this implementation does not support any extensions.
      */
     @Override
@@ -97,7 +97,7 @@ public class WebSocketServerContainer implements WebSocketContainer, ServerConta
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * The default value for this implementation is -1.
      */
     @Override
@@ -107,7 +107,7 @@ public class WebSocketServerContainer implements WebSocketContainer, ServerConta
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * The default value for this implementation is -1.
      */
     @Override

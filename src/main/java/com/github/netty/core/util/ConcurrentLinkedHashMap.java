@@ -26,7 +26,7 @@ import static java.util.Collections.*;
  * exceeded its capacity. Unlike the <tt>Java Collections Framework</tt>, this
  * map does not have a publicly visible constructor and instances are created
  * through a {@link Builder}.
- * <p>
+ * 
  * An entry is evicted from the map when the <tt>weighted capacity</tt> exceeds
  * its <tt>maximum weighted capacity</tt> threshold. A {@link Weigher} instance
  * determines how many units of capacity that a value consumes. The default
@@ -36,7 +36,7 @@ import static java.util.Collections.*;
  * by the total number of elements that it contains. A change to a value that
  * modifies its weight requires that an update operation is performed on the
  * map.
- * <p>
+ * 
  * An {@link EvictionListener} may be supplied for notification when an entry
  * is evicted from the map. This listener is invoked on a caller's thread and
  * will not block other threads from operating on the map. An implementation
@@ -45,18 +45,18 @@ import static java.util.Collections.*;
  * safety and a fast turn around time can be achieved by performing the
  * operation asynchronously, such as by submitting a task to an
  * {@link ExecutorService}.
- * <p>
+ * 
  * The <tt>concurrency level</tt> determines the number of threads that can
  * concurrently modify the table. Using a significantly higher or lower value
  * than needed can waste space or lead to thread contention, but an estimate
  * within an order of magnitude of the ideal value does not usually have a
  * noticeable impact. Because placement in hash tables is essentially random,
  * the actual concurrency will vary.
- * <p>
+ * 
  * This class and its views and iterators implement all of the
  * <em>optional</em> methods of the {@link Map} and {@link Iterator}
  * interfaces.
- * <p>
+ * 
  * Like {@link Hashtable} but unlike {@link HashMap}, this class
  * does <em>not</em> allow <tt>null</tt> to be used as a key or value. Unlike
  * {@link LinkedHashMap}, this class does <em>not</em> provide
@@ -829,7 +829,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * this map. The set's iterator returns the keys whose order of iteration is
      * the ascending order in which its entries are considered eligible for
      * retention, from the least-likely to be retained to the most-likely.
-     * <p>
+     * 
      * Beware that, unlike in {@link #keySet()}, obtaining the set is <em>NOT</em>
      * a constant-time operation. Because of the asynchronous nature of the page
      * replacement policy, determining the retention ordering requires a traversal
@@ -846,7 +846,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * this map. The set's iterator returns the keys whose order of iteration is
      * the ascending order in which its entries are considered eligible for
      * retention, from the least-likely to be retained to the most-likely.
-     * <p>
+     * 
      * Beware that, unlike in {@link #keySet()}, obtaining the set is <em>NOT</em>
      * a constant-time operation. Because of the asynchronous nature of the page
      * replacement policy, determining the retention ordering requires a traversal
@@ -865,7 +865,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * this map. The set's iterator returns the keys whose order of iteration is
      * the descending order in which its entries are considered eligible for
      * retention, from the most-likely to be retained to the least-likely.
-     * <p>
+     * 
      * Beware that, unlike in {@link #keySet()}, obtaining the set is <em>NOT</em>
      * a constant-time operation. Because of the asynchronous nature of the page
      * replacement policy, determining the retention ordering requires a traversal
@@ -882,7 +882,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * this map. The set's iterator returns the keys whose order of iteration is
      * the descending order in which its entries are considered eligible for
      * retention, from the most-likely to be retained to the least-likely.
-     * <p>
+     * 
      * Beware that, unlike in {@link #keySet()}, obtaining the set is <em>NOT</em>
      * a constant-time operation. Because of the asynchronous nature of the page
      * replacement policy, determining the retention ordering requires a traversal
@@ -936,7 +936,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * iteration is the ascending order in which its entries are considered
      * eligible for retention, from the least-likely to be retained to the
      * most-likely.
-     * <p>
+     * 
      * Beware that obtaining the mappings is <em>NOT</em> a constant-time
      * operation. Because of the asynchronous nature of the page replacement
      * policy, determining the retention ordering requires a traversal of the
@@ -954,7 +954,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * iteration is the ascending order in which its entries are considered
      * eligible for retention, from the least-likely to be retained to the
      * most-likely.
-     * <p>
+     * 
      * Beware that obtaining the mappings is <em>NOT</em> a constant-time
      * operation. Because of the asynchronous nature of the page replacement
      * policy, determining the retention ordering requires a traversal of the
@@ -974,7 +974,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * iteration is the descending order in which its entries are considered
      * eligible for retention, from the most-likely to be retained to the
      * least-likely.
-     * <p>
+     * 
      * Beware that obtaining the mappings is <em>NOT</em> a constant-time
      * operation. Because of the asynchronous nature of the page replacement
      * policy, determining the retention ordering requires a traversal of the
@@ -992,7 +992,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * iteration is the descending order in which its entries are considered
      * eligible for retention, from the most-likely to be retained to the
      * least-likely.
-     * <p>
+     * 
      * Beware that obtaining the mappings is <em>NOT</em> a constant-time
      * operation. Because of the asynchronous nature of the page replacement
      * policy, determining the retention ordering requires a traversal of the
@@ -1509,11 +1509,11 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
      * capacity restrictions; they grow as necessary to support usage. They are not
      * thread-safe; in the absence of external synchronization, they do not support
      * concurrent access by multiple threads. Null elements are prohibited.
-     * <p>
+     * 
      * Most <tt>LinkedDeque</tt> operations run in constant time by assuming that
      * the {@link Linked} parameter is associated with the deque instance. Any usage
      * that violates this assumption will result in non-deterministic behavior.
-     * <p>
+     * 
      * The iterators returned by this class are <em>not</em> <i>fail-fast</i>: If
      * the deque is modified at any time after the iterator is created, the iterator
      * will be in an unknown state. Thus, in the face of concurrent modification,
@@ -1960,7 +1960,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
          * This allows for restricting the capacity based on the memory-consumption
          * and is primarily for usage by dedicated caching servers that hold the
          * serialized data.
-         * <p>
+         * 
          * A value with a weight of <tt>0</tt> will be rejected by the map. If a value
          * with this weight can occur then the caller should eagerly evaluate the
          * value and treat it as a removal operation. Alternatively, a custom weigher
@@ -1978,7 +1978,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
          * {@link #collection()} weigher cannot be, as evaluation takes O(n) time. A
          * map bounded with this weigher will evict when the total number of elements
          * exceeds the capacity rather than the number of key-value pairs in the map.
-         * <p>
+         * 
          * A value with a weight of <tt>0</tt> will be rejected by the map. If a value
          * with this weight can occur then the caller should eagerly evaluate the
          * value and treat it as a removal operation. Alternatively, a custom weigher
@@ -1997,7 +1997,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
          * number of elements. A map bounded with this weigher will evict when the
          * total number of elements exceeds the capacity rather than the number of
          * key-value pairs in the map.
-         * <p>
+         * 
          * A value with a weight of <tt>0</tt> will be rejected by the map. If a value
          * with this weight can occur then the caller should eagerly evaluate the
          * value and treat it as a removal operation. Alternatively, a custom weigher
@@ -2016,7 +2016,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
          * of elements. A map bounded with this weigher will evict when the total
          * number of elements exceeds the capacity rather than the number of
          * key-value pairs in the map.
-         * <p>
+         * 
          * A value with a weight of <tt>0</tt> will be rejected by the map. If a value
          * with this weight can occur then the caller should eagerly evaluate the
          * value and treat it as a removal operation. Alternatively, a custom weigher
@@ -2035,7 +2035,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
          * of elements. A map bounded with this weigher will evict when the total
          * number of elements exceeds the capacity rather than the number of
          * key-value pairs in the map.
-         * <p>
+         * 
          * A value with a weight of <tt>0</tt> will be rejected by the map. If a value
          * with this weight can occur then the caller should eagerly evaluate the
          * value and treat it as a removal operation. Alternatively, a custom weigher
@@ -2054,7 +2054,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V> imple
          * entries. A map bounded with this weigher will evict when the total number of
          * entries across all values exceeds the capacity rather than the number of
          * key-value pairs in the map.
-         * <p>
+         * 
          * A value with a weight of <tt>0</tt> will be rejected by the map. If a value
          * with this weight can occur then the caller should eagerly evaluate the
          * value and treat it as a removal operation. Alternatively, a custom weigher
