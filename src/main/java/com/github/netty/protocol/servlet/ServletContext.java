@@ -192,6 +192,7 @@ public class ServletContext implements jakarta.servlet.ServletContext {
 
     /**
      * 是否开启UrlServlet的AntPathMatcher路径匹配,默认false不开启
+     * @param enableAntPathMatcher enableAntPathMatcher
      */
     public void setEnableUrlServletAntPathMatcher(boolean enableAntPathMatcher) {
         servletUrlMapper.setEnableAntPathMatcher(enableAntPathMatcher);
@@ -203,6 +204,7 @@ public class ServletContext implements jakarta.servlet.ServletContext {
 
     /**
      * 是否开启UrlFilter的AntPathMatcher路径匹配,默认false不开启
+     * @param enableAntPathMatcher enableAntPathMatcher
      */
     public void setEnableUrlFilterAntPathMatcher(boolean enableAntPathMatcher) {
         filterUrlMapper.setEnableAntPathMatcher(enableAntPathMatcher);

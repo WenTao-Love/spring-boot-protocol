@@ -611,6 +611,8 @@ public class ServletUtil {
      *
      * @param testPath                   URL mapping being checked
      * @param contextRelativeRequestPath Context-relative request path of this request
+     * @return <code>true</code> if the context-relative request path matches the requirements of the specified filter
+     * mapping; otherwise, return <code>false</code>.
      */
     public static boolean matchFiltersURL(String testPath, String contextRelativeRequestPath) {
         // Case 1 - Exact Match

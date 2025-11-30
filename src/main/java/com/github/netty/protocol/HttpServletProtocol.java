@@ -346,16 +346,6 @@ public class HttpServletProtocol extends AbstractProtocol {
         return servletContext;
     }
 
-    /**
-     * @param jksKeyFile  xxx.jks
-     * @param jksPassword jks-password
-     * @throws CertificateException
-     * @throws IOException
-     * @throws UnrecoverableKeyException
-     * @throws NoSuchAlgorithmException
-     * @throws KeyStoreException
-     * @throws KeyManagementException
-     */
     public void setSslFileJks(File jksKeyFile, File jksPassword) throws CertificateException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         this.sslContextBuilder = SslContextBuilders.newSslContextBuilderJks(jksKeyFile, jksPassword);
     }
