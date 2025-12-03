@@ -1,5 +1,13 @@
 package com.github.netty.springboot;
 
+import java.io.File;
+import java.io.Serializable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionHandler;
+
+import org.noear.solon.annotation.BindProps;
+
 import com.github.netty.core.util.AbortPolicyWithReport;
 import com.github.netty.core.util.ApplicationX;
 import com.github.netty.core.util.NettyThreadPoolExecutor;
@@ -9,16 +17,9 @@ import com.github.netty.protocol.mysql.server.MysqlBackendBusinessHandler;
 import com.github.netty.protocol.nrpc.codec.DataCodecUtil;
 import com.github.netty.protocol.servlet.util.HttpAbortPolicyWithReport;
 import com.github.netty.protocol.servlet.util.HttpConstants;
+
 import io.netty.handler.logging.LogLevel;
 import io.netty.util.ResourceLeakDetector;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
-
-import java.io.File;
-import java.io.Serializable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionHandler;
 
 /**
  * You can configure it here
@@ -26,38 +27,32 @@ import java.util.concurrent.RejectedExecutionHandler;
  * @author wangzihao
  * 2018/8/25/025
  */
-@ConfigurationProperties(prefix = "server.netty", ignoreUnknownFields = true)
+@BindProps(prefix = "server.netty")
 public class NettyProperties implements Serializable {
     private static final long serialVersionUID = 1L;
     /**
      * HTTP协议(Servlet实现)
      */
-    @NestedConfigurationProperty
     private final HttpServlet httpServlet = new HttpServlet();
     /**
      * dubbo协议
      */
-    @NestedConfigurationProperty
     private final Dubbo dubbo = new Dubbo();
     /**
      * NRPC协议
      */
-    @NestedConfigurationProperty
     private final Nrpc nrpc = new Nrpc();
     /**
      * MQTT协议
      */
-    @NestedConfigurationProperty
     private final Mqtt mqtt = new Mqtt();
     /**
      * RTSP协议
      */
-    @NestedConfigurationProperty
     private final Rtsp rtsp = new Rtsp();
     /**
      * MYSQL代理协议
      */
-    @NestedConfigurationProperty
     private final Mysql mysql = new Mysql();
     /**
      * 全局对象(类似spring容器)
@@ -293,7 +288,6 @@ public class NettyProperties implements Serializable {
         /**
          * 服务端 - 线程池配置 (如果您应用大部分代码都是异步调用,请关闭线程池,QPS将提升30%)
          */
-        @NestedConfigurationProperty
         private final ServerThreadPool threadPool = new ServerThreadPool();
         /**
          * 是否开启h2c  upgrade: h2c
@@ -759,7 +753,6 @@ public class NettyProperties implements Serializable {
         /**
          * RPC服务端 - 业务线程池配置
          */
-        @NestedConfigurationProperty
         private final ServerThreadPool threadPool = new ServerThreadPool();
         /**
          * 是否开启rpc代理
@@ -1118,7 +1111,6 @@ public class NettyProperties implements Serializable {
         /**
          * 代理日志的配置
          */
-        @NestedConfigurationProperty
         private final MysqlProxyLog proxyLog = new MysqlProxyLog();
         /**
          * 是否开启MYSQL代理协议

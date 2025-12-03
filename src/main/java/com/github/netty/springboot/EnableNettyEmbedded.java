@@ -1,11 +1,21 @@
 package com.github.netty.springboot;
 
-import com.github.netty.core.AbstractProtocol;
-import com.github.netty.springboot.server.*;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Import;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.lang.annotation.*;
+import org.noear.solon.annotation.Condition;
+import org.noear.solon.annotation.Import;
+
+import com.github.netty.core.AbstractProtocol;
+import com.github.netty.springboot.server.HttpServletProtocolSpringAdapter;
+import com.github.netty.springboot.server.NRpcProtocolSpringAdapter;
+import com.github.netty.springboot.server.NettyEmbeddedAutoConfiguration;
+import com.github.netty.springboot.server.NettyRequestUpgradeStrategy;
+import com.github.netty.springboot.server.NettyTcpServerFactory;
 
 /**
  * Enable embedded TCP container.
@@ -93,7 +103,7 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Documented
 @Inherited
-@EnableConfigurationProperties(NettyProperties.class)
+@Condition(onBean = NettyProperties.class)
 @Import({NettyEmbeddedAutoConfiguration.class})
 public @interface EnableNettyEmbedded {
 

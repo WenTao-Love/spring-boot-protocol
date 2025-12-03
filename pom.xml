@@ -21,6 +21,9 @@
         <java.version>17</java.version>
 
         <spring-boot.version>3.5.8</spring-boot.version>
+        <solon.version>3.7.2</solon.version>
+        <jakarta.websocket.version>2.2.0</jakarta.websocket.version>
+        <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
 
         <jackson-annotations.version>2.20</jackson-annotations.version>
         <jackson.version>2.20.1</jackson.version>
@@ -59,7 +62,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.1.0</version>
+            <version>${jakarta.servlet.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -67,7 +70,7 @@
         <dependency>
             <groupId>jakarta.websocket</groupId>
             <artifactId>jakarta.websocket-api</artifactId>
-            <version>2.2.0</version>
+            <version>${jakarta.websocket.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -75,7 +78,7 @@
         <dependency>
             <groupId>jakarta.websocket</groupId>
             <artifactId>jakarta.websocket-client-api</artifactId>
-            <version>2.2.0</version>
+            <version>${jakarta.websocket.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -167,38 +170,44 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <version>${spring-boot.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
             <exclusions>
-<!--                <exclusion>-->
-<!--                    <groupId>org.springframework.boot</groupId>-->
-<!--                    <artifactId>spring-boot-starter-tomcat</artifactId>-->
-<!--                </exclusion>-->
                 <exclusion>
                     <groupId>org.hibernate.validator</groupId>
                     <artifactId>hibernate-validator</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>-->
+		<dependency>
+            <groupId>org.noear</groupId>
+            <artifactId>solon-server</artifactId>
+            <version>${solon.version}</version>
         </dependency>
+
         <dependency>
+            <groupId>org.noear</groupId>
+            <artifactId>solon-web-servlet-jakarta</artifactId>
+            <version>${solon.version}</version>
+        </dependency>
+        <!--<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <version>${spring-boot.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
             <version>${spring-boot.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>io.reactivex.rxjava3</groupId>
             <artifactId>rxjava</artifactId>
@@ -252,10 +261,16 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
+        <!--<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>${spring-boot.version}</version>
+            <scope>test</scope>
+        </dependency>-->
+        <dependency>
+            <groupId>org.noear</groupId>
+            <artifactId>solon-server</artifactId>
+            <version>${solon.version}</version>
             <scope>test</scope>
         </dependency>
 

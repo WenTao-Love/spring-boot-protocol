@@ -1,5 +1,6 @@
 package com.github.netty.springboot.client;
 
+import com.github.netty.core.util.ApplicationX;
 import com.github.netty.core.util.LoggerFactoryX;
 import com.github.netty.core.util.LoggerX;
 import com.github.netty.protocol.nrpc.RpcClient;
@@ -7,121 +8,95 @@ import com.github.netty.protocol.nrpc.codec.DataCodecUtil;
 import com.github.netty.springboot.EnableNettyRpcClients;
 import com.github.netty.springboot.NettyProperties;
 import com.github.netty.springboot.NettyRpcClient;
-import com.github.netty.springboot.SpringUtil;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanClassLoaderAware;
-import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.context.EnvironmentAware;
-import org.springframework.context.ResourceLoaderAware;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.core.env.Environment;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.StringUtils;
 
 import java.beans.Introspector;
-import java.lang.annotation.Annotation;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.lang.reflect.Proxy;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * Scan rpc interfaces and definition bean.
+ * Scan rpc interfaces and definition bean using Solon style
  *
  * @author wangzihao
- * @see #registerNettyRpcClient
- * @see #newInstanceSupplier
  */
-public class NettyRpcClientBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar,
-        ResourceLoaderAware, BeanClassLoaderAware, EnvironmentAware, BeanFactoryAware, BeanPostProcessor {
+public class NettyRpcClientBeanDefinitionRegistrar {
     private final LoggerX logger = LoggerFactoryX.getLogger(getClass());
-    private ResourceLoader resourceLoader;
-    private ClassLoader classLoader;
-    private Environment environment;
     private final String enableNettyRpcClientsCanonicalName = EnableNettyRpcClients.class.getCanonicalName();
     private final String nettyRpcClientCanonicalName = NettyRpcClient.class.getCanonicalName();
-    private final String lazyCanonicalName = Lazy.class.getCanonicalName();
     private Supplier<NettyRpcLoadBalanced> nettyRpcLoadBalancedSupplier;
     private Supplier<NettyProperties> nettyPropertiesSupplier;
-    private BeanFactory beanFactory;
+    private ApplicationX applicationX;
 
     public NettyRpcClientBeanDefinitionRegistrar() {
     }
 
-    @Override
-    public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
-        GenericBeanDefinition beanPostProcessorDefinition = new GenericBeanDefinition();
-        beanPostProcessorDefinition.setInstanceSupplier(() -> this);
-        beanPostProcessorDefinition.setBeanClass(BeanPostProcessor.class);
-        registry.registerBeanDefinition("NettyRpcClientBeanPostProcessor", beanPostProcessorDefinition);
+    /**
+     * 注册RPC客户端Bean
+     * @param applicationX 应用上下文
+     * @param importingClass 导入类
+     */
+    public void registerRpcClients(ApplicationX applicationX, Class<?> importingClass) {
+        this.applicationX = applicationX;
+        
+        // 初始化Bean获取器
+        this.nettyRpcLoadBalancedSupplier = () -> applicationX.getBean(NettyRpcLoadBalanced.class);
+        this.nettyPropertiesSupplier = () -> {
+            NettyProperties properties = applicationX.getBean(NettyProperties.class);
+            logger.info("used codec = {}", DataCodecUtil.getDataCodec());
+            this.nettyPropertiesSupplier = () -> properties;
+            return properties;
+        };
 
-        ClassPathScanningCandidateComponentProvider scanner = getScanner();
-        scanner.setResourceLoader(resourceLoader);
-        scanner.addIncludeFilter(new AnnotationTypeFilter(NettyRpcClient.class));
-        Map<String, Object> enableNettyRpcClientsAttributes = metadata.getAnnotationAttributes(enableNettyRpcClientsCanonicalName);
+        // 获取注解信息
+        EnableNettyRpcClients annotation = importingClass.getAnnotation(EnableNettyRpcClients.class);
+        Set<String> basePackages = getBasePackages(importingClass, annotation);
 
-        for (String basePackage : getBasePackages(metadata, enableNettyRpcClientsAttributes)) {
-            for (BeanDefinition candidateComponent : scanner.findCandidateComponents(basePackage)) {
-                if (!(candidateComponent instanceof AnnotatedBeanDefinition)) {
-                    continue;
-                }
-
-                AnnotatedBeanDefinition beanDefinition = (AnnotatedBeanDefinition) candidateComponent;
-                if (!beanDefinition.getMetadata().isInterface()) {
-                    throw new IllegalArgumentException("@NettyRpcClient can only be specified on an interface");
-                }
-                registerNettyRpcClient(beanDefinition, registry);
-            }
+        // 扫描并注册RPC客户端
+        for (String basePackage : basePackages) {
+            scanAndRegisterRpcClients(basePackage);
         }
+
+        // 注册Bean后处理器
+        applicationX.addBeanPostProcessor(new SolonBeanPostProcessor());
     }
 
-    @Override
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
-    }
-
-    @Override
-    public void setBeanClassLoader(ClassLoader classLoader) {
-        this.classLoader = classLoader;
-    }
-
-    @Override
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
-    }
-
-    private void registerNettyRpcClient(AnnotatedBeanDefinition beanDefinition, BeanDefinitionRegistry registry) {
-        AnnotationMetadata metadata = beanDefinition.getMetadata();
-        Map<String, Object> nettyRpcClientAttributes = metadata.getAnnotationAttributes(nettyRpcClientCanonicalName);
-        Map<String, Object> lazyAttributes = metadata.getAnnotationAttributes(lazyCanonicalName);
-
-        Class<?> beanClass;
+    private void scanAndRegisterRpcClients(String basePackage) {
         try {
-            beanClass = ClassUtils.forName(metadata.getClassName(), classLoader);
-        } catch (ClassNotFoundException e) {
-            throw new BeanCreationException("NettyRpcClientsRegistrar failure! notfound class", e);
+            // 使用ApplicationX的扫描功能
+            ApplicationX.ScannerResult scannerResult = applicationX.scanner(basePackage);
+            
+            // 处理扫描到的类
+            for (Map.Entry<String, ApplicationX.BeanDefinition> entry : scannerResult.getBeanDefinitionMap().entrySet()) {
+                ApplicationX.BeanDefinition definition = entry.getValue();
+                Class<?> beanClass = definition.getBeanClassIfResolve(applicationX.getClass()::getClassLoader);
+                
+                // 检查是否有NettyRpcClient注解
+                NettyRpcClient nettyRpcClient = beanClass.getAnnotation(NettyRpcClient.class);
+                if (nettyRpcClient != null && beanClass.isInterface()) {
+                    registerNettyRpcClient(beanClass, nettyRpcClient);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Scan RPC clients failed for package: {}", basePackage, e);
         }
+    }
 
-        String serviceName = resolve((String) nettyRpcClientAttributes.get("serviceName"));
-        beanDefinition.setLazyInit(lazyAttributes == null || Boolean.TRUE.equals(lazyAttributes.get("value")));
-        ((AbstractBeanDefinition) beanDefinition).setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
-        ((AbstractBeanDefinition) beanDefinition).setInstanceSupplier(newInstanceSupplier(beanClass, serviceName, (int) nettyRpcClientAttributes.get("timeout")));
+    private void registerNettyRpcClient(Class<?> beanClass, NettyRpcClient annotation) {
+        String serviceName = annotation.serviceName();
+        int timeout = annotation.timeout();
+        // 移除Spring的Lazy注解依赖，使用默认非延迟初始化或自定义逻辑
+        boolean isLazy = false; // 默认非延迟初始化
 
-        String beanName = generateBeanName(beanDefinition.getBeanClassName());
-        registry.registerBeanDefinition(beanName, beanDefinition);
+        // 创建Bean定义
+        ApplicationX.BeanDefinition definition = applicationX.newBeanDefinition(beanClass);
+        definition.setLazyInit(isLazy);
+        definition.setBeanSupplier(newInstanceSupplier(beanClass, serviceName, timeout));
+
+        // 生成Bean名称
+        String beanName = generateBeanName(beanClass.getName());
+        
+        // 注册Bean定义
+        applicationX.addBeanDefinition(beanName, definition);
     }
 
     public <T> Supplier<T> newInstanceSupplier(Class<T> beanClass, String serviceName, int timeout) {
@@ -133,95 +108,65 @@ public class NettyRpcClientBeanDefinitionRegistrar implements ImportBeanDefiniti
             if (timeout > 0) {
                 nettyRpcClientProxy.setTimeout(timeout);
             }
-            Object instance = java.lang.reflect.Proxy.newProxyInstance(classLoader, new Class[]{beanClass, RpcClient.Proxy.class}, nettyRpcClientProxy);
+            Object instance = Proxy.newProxyInstance(beanClass.getClassLoader(), 
+                    new Class[]{beanClass, RpcClient.Proxy.class}, 
+                    nettyRpcClientProxy);
             return (T) instance;
         };
     }
 
     public String generateBeanName(String beanClassName) {
-        return Introspector.decapitalize(ClassUtils.getShortName(beanClassName));
+        int lastDotIndex = beanClassName.lastIndexOf('.');
+        String shortName = lastDotIndex > 0 ? beanClassName.substring(lastDotIndex + 1) : beanClassName;
+        return Introspector.decapitalize(shortName);
     }
 
-    private String resolve(String value) {
-        if (StringUtils.hasText(value)) {
-            return this.environment.resolvePlaceholders(value);
-        }
-        return value;
-    }
-
-    protected Set<String> getBasePackages(AnnotationMetadata importingClassMetadata, Map<String, Object> enableNettyRpcClientsAttributes) {
+    protected Set<String> getBasePackages(Class<?> importingClass, EnableNettyRpcClients annotation) {
         Set<String> basePackages = new HashSet<>();
-        if (enableNettyRpcClientsAttributes != null) {
-            for (String pkg : (String[]) enableNettyRpcClientsAttributes.get("value")) {
-                if (StringUtils.hasText(pkg)) {
-                    basePackages.add(pkg);
+        if (annotation != null) {
+            for (String pkg : annotation.value()) {
+                if (pkg != null && !pkg.trim().isEmpty()) {
+                    basePackages.add(pkg.trim());
                 }
             }
-            for (String pkg : (String[]) enableNettyRpcClientsAttributes.get("basePackages")) {
-                if (StringUtils.hasText(pkg)) {
-                    basePackages.add(pkg);
+            for (String pkg : annotation.basePackages()) {
+                if (pkg != null && !pkg.trim().isEmpty()) {
+                    basePackages.add(pkg.trim());
                 }
             }
         }
 
         if (basePackages.isEmpty()) {
-            basePackages.add(
-                    ClassUtils.getPackageName(importingClassMetadata.getClassName()));
+            basePackages.add(importingClass.getPackage().getName());
         }
         return basePackages;
     }
 
-    private ClassPathScanningCandidateComponentProvider getScanner() {
-        return new ClassPathScanningCandidateComponentProvider(false, this.environment) {
-            @Override
-            protected boolean isCandidateComponent(
-                    AnnotatedBeanDefinition beanDefinition) {
-                if (beanDefinition.getMetadata().isIndependent()) {
-                    // TODO until SPR-11711 will be resolved
-                    if (beanDefinition.getMetadata().isInterface()
-                            && beanDefinition.getMetadata()
-                            .getInterfaceNames().length == 1
-                            && Annotation.class.getName().equals(beanDefinition
-                            .getMetadata().getInterfaceNames()[0])) {
-                        try {
-                            Class<?> target = ClassUtils.forName(
-                                    beanDefinition.getMetadata().getClassName(),
-                                    classLoader);
-                            return !target.isAnnotation();
-                        } catch (Exception ex) {
-                            this.logger.error(
-                                    "Could not load target class: "
-                                            + beanDefinition.getMetadata().getClassName(),
-                                    ex);
-
-                        }
-                    }
-                    return true;
-                }
-                return false;
-
+    /**
+     * Solon风格的Bean后处理器
+     */
+    private class SolonBeanPostProcessor implements ApplicationX.BeanPostProcessor {
+        @Override
+        public Object postProcessAfterInitialization(Object bean, String beanName) {
+            ApplicationX.BeanDefinition definition = applicationX.getBeanDefinition(beanName);
+            // 检查是否是单例且不是NettyProperties
+            if (definition != null && definition.isSingleton() && !(bean instanceof NettyProperties)) {
+                nettyPropertiesSupplier.get().getApplication()
+                        .addSingletonBean(bean, beanName, false);
             }
-        };
-    }
-
-    @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-        this.beanFactory = beanFactory;
-        this.nettyRpcLoadBalancedSupplier = () -> beanFactory.getBean(NettyRpcLoadBalanced.class);
-        this.nettyPropertiesSupplier = () -> {
-            NettyProperties properties = beanFactory.getBean(NettyProperties.class);
-            logger.info("used codec = {}", DataCodecUtil.getDataCodec());
-            this.nettyPropertiesSupplier = () -> properties;
-            return properties;
-        };
-    }
-
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        if (SpringUtil.isSingletonBean(beanFactory, beanName) && !(bean instanceof NettyProperties)) {
-            nettyPropertiesSupplier.get().getApplication()
-                    .addSingletonBean(bean, beanName, false);
+            return bean;
         }
-        return bean;
+    }
+
+    /**
+     * 用于在ApplicationX初始化时自动调用的静态方法
+     */
+    public static void register(ApplicationX applicationX) {
+        // 查找带有@EnableNettyRpcClients注解的配置类
+        List<Object> configBeans = applicationX.getBeanForAnnotation(EnableNettyRpcClients.class);
+        for (Object configBean : configBeans) {
+            NettyRpcClientBeanDefinitionRegistrar registrar = new NettyRpcClientBeanDefinitionRegistrar();
+            registrar.registerRpcClients(applicationX, configBean.getClass());
+        }
     }
 }

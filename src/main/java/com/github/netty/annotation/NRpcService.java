@@ -1,11 +1,14 @@
 package com.github.netty.annotation;
 
-import com.github.netty.core.util.ApplicationX;
-import org.springframework.core.annotation.AliasFor;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ResponseBody;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.lang.annotation.*;
+import org.noear.solon.annotation.Controller;
+
+import com.github.netty.core.util.ApplicationX;
 
 /**
  * RPC service note :(to use RPC, the interface or class can be configured with or without annotations, the default is the class name of the interface)
@@ -15,7 +18,7 @@ import java.lang.annotation.*;
 @Documented
 @ApplicationX.Component
 @Controller
-@ResponseBody
+//@ResponseBody
 public @interface NRpcService {
     /**
      * Default timeout
@@ -27,7 +30,7 @@ public @interface NRpcService {
      *
      * @return value
      */
-    @AliasFor(annotation = Controller.class)
+//    @AliasFor(annotation = Controller.class)
     String value() default "";
 
     /**

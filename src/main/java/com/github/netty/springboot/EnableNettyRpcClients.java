@@ -1,12 +1,17 @@
 package com.github.netty.springboot;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.noear.solon.annotation.Condition;
+import org.noear.solon.annotation.Import;
+
 import com.github.netty.springboot.client.NettyRpcClientBeanDefinitionRegistrar;
 import com.github.netty.springboot.client.NettyRpcLoadBalanced;
 import com.github.netty.springboot.client.NettyRpcRequest;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Import;
-
-import java.lang.annotation.*;
 
 
 /**
@@ -24,7 +29,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Documented
-@EnableConfigurationProperties(NettyProperties.class)
+@Condition(onBean = NettyProperties.class)
 @Import({NettyRpcClientBeanDefinitionRegistrar.class})
 public @interface EnableNettyRpcClients {
     String[] value() default {};

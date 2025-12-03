@@ -1,15 +1,5 @@
 package com.github.netty.springboot.client;
 
-import com.github.netty.annotation.NRpcMethod;
-import com.github.netty.annotation.NRpcParam;
-import com.github.netty.core.util.*;
-import com.github.netty.protocol.nrpc.*;
-import com.github.netty.protocol.nrpc.exception.RpcConnectException;
-import com.github.netty.springboot.NettyProperties;
-import io.netty.util.concurrent.FastThreadLocal;
-import org.springframework.core.annotation.AnnotationAwareOrderComparator;
-import org.springframework.web.bind.annotation.*;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -20,6 +10,35 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+
+import org.apache.dubbo.rpc.protocol.tri.rest.mapping.RequestMapping;
+import org.apache.dubbo.rpc.protocol.tri.rest.openapi.model.RequestBody;
+import org.noear.solon.annotation.Body;
+import org.noear.solon.annotation.Cookie;
+import org.noear.solon.annotation.Header;
+import org.noear.solon.annotation.Mapping;
+import org.noear.solon.annotation.Multipart;
+import org.noear.solon.annotation.Param;
+import org.noear.solon.annotation.Path;
+
+import com.github.netty.annotation.NRpcMethod;
+import com.github.netty.annotation.NRpcParam;
+import com.github.netty.core.Ordered;
+import com.github.netty.core.util.AnnotationMethodToMethodNameFunction;
+import com.github.netty.core.util.AnnotationMethodToParameterNamesFunction;
+import com.github.netty.core.util.ApplicationX;
+import com.github.netty.core.util.Recyclable;
+import com.github.netty.core.util.ReflectUtil;
+import com.github.netty.core.util.StringUtil;
+import com.github.netty.protocol.nrpc.RpcClient;
+import com.github.netty.protocol.nrpc.RpcClientAop;
+import com.github.netty.protocol.nrpc.RpcMethod;
+import com.github.netty.protocol.nrpc.RpcServerChannelHandler;
+import com.github.netty.protocol.nrpc.RpcServerInstance;
+import com.github.netty.protocol.nrpc.exception.RpcConnectException;
+import com.github.netty.springboot.NettyProperties;
+
+import io.netty.util.concurrent.FastThreadLocal;
 
 /**
  * RPC client proxy (thread safe)
@@ -61,10 +80,10 @@ public class NettyRpcClientProxy implements InvocationHandler {
     private final String rpcInstanceKey;
     private final String version;
     private final AnnotationMethodToParameterNamesFunction annotationMethodToParameterNamesFunction = new AnnotationMethodToParameterNamesFunction(
-            NRpcParam.class, RequestParam.class, RequestBody.class, RequestHeader.class,
-            PathVariable.class, CookieValue.class, RequestPart.class);
+            NRpcParam.class, Param.class, Body.class, Header.class,
+            Path.class, Cookie.class, Multipart.class);
     private final AnnotationMethodToMethodNameFunction annotationMethodToMethodNameFunction = new AnnotationMethodToMethodNameFunction(
-            NRpcMethod.class, RequestMapping.class);
+            NRpcMethod.class, Mapping.class);
     private String serviceName;
     private int timeout;
     private final NettyProperties properties;
@@ -144,8 +163,26 @@ public class NettyRpcClientProxy implements InvocationHandler {
     }
 
     public List<NettyRpcFilter> getNettyRpcFilterList() {
+        // 使用Solon风格获取Bean列表
         List<NettyRpcFilter> nettyRpcFilterList = properties.getApplication().getBeanForType(NettyRpcFilter.class);
-        nettyRpcFilterList.sort(AnnotationAwareOrderComparator.INSTANCE);
+        // 创建一个适用于NettyRpcFilter的比较器
+        nettyRpcFilterList.sort((filter1, filter2) -> {
+            // 检查是否实现了Ordered接口
+            if (filter1 instanceof Ordered && filter2 instanceof Ordered) {
+                Ordered ordered1 = (Ordered) filter1;
+                Ordered ordered2 = (Ordered) filter2;
+                return ordered1.getOrder() < ordered2.getOrder() ? -1 : 1;
+            }
+            // 如果只有一个实现了Ordered接口，则优先
+            else if (filter1 instanceof Ordered) {
+                return -1;
+            }
+            else if (filter2 instanceof Ordered) {
+                return 1;
+            }
+            // 都没有实现Ordered接口，则保持原有顺序
+            return 0;
+        });
         return nettyRpcFilterList;
     }
 
@@ -173,16 +210,16 @@ public class NettyRpcClientProxy implements InvocationHandler {
             return requestMappingName;
         }
 
-        RequestMapping requestMapping = ReflectUtil.findAnnotation(objectType, RequestMapping.class);
+        Mapping requestMapping = ReflectUtil.findAnnotation(objectType, Mapping.class);
         if (requestMapping != null) {
             requestMappingName = requestMapping.name();
-            String[] values = requestMapping.value();
-            String[] paths = requestMapping.path();
-            if (StringUtil.isEmpty(requestMappingName) && values.length > 0) {
-                requestMappingName = values[0];
+            String value = requestMapping.value();
+            String path = requestMapping.path();
+            if (StringUtil.isEmpty(requestMappingName) && StringUtil.isNotEmpty(value)) {
+                requestMappingName = value;
             }
-            if (StringUtil.isEmpty(requestMappingName) && paths.length > 0) {
-                requestMappingName = paths[0];
+            if (StringUtil.isEmpty(requestMappingName) && StringUtil.isNotEmpty(path)) {
+                requestMappingName = path;
             }
             if (StringUtil.isNotEmpty(requestMappingName)) {
                 return requestMappingName;
@@ -207,6 +244,7 @@ public class NettyRpcClientProxy implements InvocationHandler {
                 if (rpcClient == null) {
                     NettyProperties.Nrpc nrpc = properties.getNrpc();
                     rpcClient = new RpcClient(address);
+                    // 使用Solon风格获取Bean列表
                     rpcClient.getAopList().addAll(properties.getApplication().getBeanForType(RpcClientAop.class));
                     rpcClient.setIoThreadCount(nrpc.getClientIoThreads());
                     rpcClient.setIoRatio(nrpc.getClientIoRatio());
