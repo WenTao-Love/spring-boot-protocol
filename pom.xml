@@ -267,12 +267,6 @@
             <version>${spring-boot.version}</version>
             <scope>test</scope>
         </dependency>-->
-        <dependency>
-            <groupId>org.noear</groupId>
-            <artifactId>solon-server</artifactId>
-            <version>${solon.version}</version>
-            <scope>test</scope>
-        </dependency>
 
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>

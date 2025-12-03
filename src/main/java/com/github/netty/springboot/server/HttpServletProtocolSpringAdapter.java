@@ -1,37 +1,37 @@
 package com.github.netty.springboot.server;
 
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
+
+import javax.print.attribute.standard.Compression;
+
+import org.noear.solon.core.AppClassLoader;
+import org.noear.solon.core.util.ClassUtil;
+import org.noear.solon.server.prop.impl.HttpServerProps;
+
 import com.github.netty.core.AbstractNettyServer;
 import com.github.netty.core.util.LoggerFactoryX;
 import com.github.netty.core.util.LoggerX;
 import com.github.netty.core.util.StringUtil;
 import com.github.netty.protocol.HttpServletProtocol;
-import com.github.netty.protocol.servlet.*;
+import com.github.netty.protocol.servlet.ServletErrorPage;
+import com.github.netty.protocol.servlet.SessionCompositeServiceImpl;
+import com.github.netty.protocol.servlet.SessionLocalFileServiceImpl;
+import com.github.netty.protocol.servlet.SessionLocalMemoryServiceImpl;
+import com.github.netty.protocol.servlet.SessionService;
 import com.github.netty.protocol.servlet.util.Protocol;
 import com.github.netty.springboot.NettyProperties;
+import com.github.netty.springboot.SolonUtil.Ssl;
+import com.github.netty.springboot.SolonUtil.SslBundle;
 import com.github.netty.springboot.SpringUtil;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslContextBuilder;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
-import org.springframework.boot.ssl.SslBundle;
-import org.springframework.boot.ssl.SslBundles;
-import org.springframework.boot.web.server.Compression;
-import org.springframework.boot.web.server.ErrorPage;
-import org.springframework.boot.web.server.MimeMappings;
-import org.springframework.boot.web.server.Ssl;
-import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
-import org.springframework.util.ClassUtils;
-
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 /**
  * HttpServlet protocol registry (spring adapter)
@@ -42,20 +42,16 @@ import java.util.function.Supplier;
 public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
     private static final LoggerX LOGGER = LoggerFactoryX.getLogger(HttpServletProtocol.class);
     private final NettyProperties properties;
-    private Supplier<ServerProperties> serverPropertiesSupplier;
-    private Supplier<MultipartProperties> multipartPropertiesSupplier;
+    private Supplier<HttpServerProps> serverPropertiesSupplier;
 
     public HttpServletProtocolSpringAdapter(NettyProperties properties, ClassLoader classLoader,
                                             Supplier<Executor> executorSupplier, Supplier<Executor> defaultExecutorSupplier) {
-        super(new com.github.netty.protocol.servlet.ServletContext(classLoader == null ? ClassUtils.getDefaultClassLoader() : classLoader), executorSupplier, defaultExecutorSupplier);
+        super(new com.github.netty.protocol.servlet.ServletContext(classLoader == null ? AppClassLoader.global() : classLoader), executorSupplier, defaultExecutorSupplier);
         this.properties = properties;
     }
 
-    public void setMultipartPropertiesSupplier(Supplier<MultipartProperties> multipartPropertiesSupplier) {
-        this.multipartPropertiesSupplier = multipartPropertiesSupplier;
-    }
 
-    public void setServerPropertiesSupplier(Supplier<ServerProperties> serverPropertiesSupplier) {
+    public void setServerPropertiesSupplier(Supplier<HttpServerProps> serverPropertiesSupplier) {
         this.serverPropertiesSupplier = serverPropertiesSupplier;
     }
 
@@ -92,8 +88,7 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
 
     public void configurableServletContext(NettyTcpServerFactory webServerFactory) throws Exception {
         com.github.netty.protocol.servlet.ServletContext servletContext = getServletContext();
-        ServerProperties serverProperties = serverPropertiesSupplier != null ? serverPropertiesSupplier.get() : null;
-        MultipartProperties multipartProperties = multipartPropertiesSupplier != null ? multipartPropertiesSupplier.get() : null;
+        HttpServerProps serverProperties = serverPropertiesSupplier != null ? serverPropertiesSupplier.get() : null;
         NettyProperties.HttpServlet httpServlet = properties.getHttpServlet();
 
         InetSocketAddress address = NettyTcpServerFactory.getServerSocketAddress(webServerFactory.getAddress(), webServerFactory.getPort());
