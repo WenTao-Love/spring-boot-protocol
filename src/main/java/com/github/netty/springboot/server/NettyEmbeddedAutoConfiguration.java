@@ -14,22 +14,13 @@ import com.github.netty.protocol.mysql.listener.WriterLogFilePacketListener;
 import com.github.netty.protocol.mysql.server.MysqlBackendBusinessHandler;
 import com.github.netty.protocol.servlet.util.HttpAbortPolicyWithReport;
 import com.github.netty.springboot.NettyProperties;
-import com.github.netty.springboot.SpringUtil;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.ListableBeanFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.AnnotationAwareOrderComparator;
-import org.springframework.core.env.Environment;
-import org.springframework.core.io.ResourceLoader;
+import org.noear.solon.Solon;
+import org.noear.solon.SolonApp;
+import org.noear.solon.annotation.*;
+import org.noear.solon.core.AppContext;
+import org.noear.solon.core.Plugin;
+import org.noear.solon.core.bean.LifecycleBean;
+import org.noear.solon.core.util.BeanUtil;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -39,52 +30,107 @@ import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 /**
- * The netty container is automatically configured
+ * The netty container is automatically configured (Solon)
  *
  * @author wangzihao
  */
-@Configuration
-@AutoConfigureAfter(NettyProperties.class)
-@EnableConfigurationProperties(NettyProperties.class)
-public class NettyEmbeddedAutoConfiguration {
-    private final NettyProperties nettyProperties;
-
-    public NettyEmbeddedAutoConfiguration(NettyProperties nettyProperties) {
-        this.nettyProperties = nettyProperties;
+public class NettyEmbeddedAutoConfiguration implements Plugin {
+    @Inject
+    private AppContext appContext;
+    @Inject
+    private NettyProperties nettyProperties;
+    
+    @Override
+    public void start(SolonApp app) {
+        // 注册TCP服务工厂
+        Collection<ProtocolHandler> protocolHandlers = appContext.getBeansOfType(ProtocolHandler.class);
+        Collection<ServerListener> serverListeners = appContext.getBeansOfType(ServerListener.class);
+        
+        NettyTcpServerFactory serverFactory = nettyTcpServerFactory(protocolHandlers, serverListeners);
+        appContext.putBean("nettyServerFactory", serverFactory);
+        
+        // 注册HTTP协议
+        if (!appContext.hasBean(HttpServletProtocol.class)) {
+            HttpServletProtocol httpProtocol = httpServletProtocol();
+            appContext.putBean("httpServletProtocol", httpProtocol);
+        }
+        
+        // 注册Dubbo协议（如果启用）
+        if (Solon.cfg().getBool("server.netty.dubbo.enabled", false)) {
+            if (!appContext.hasBean(DubboProtocol.class)) {
+                DubboProtocol dubboProtocol = dubboProtocol();
+                appContext.putBean("dubboProtocol", dubboProtocol);
+            }
+        }
+        
+        // 注册RPC协议（如果启用）
+        if (Solon.cfg().getBool("server.netty.nrpc.enabled", false)) {
+            if (!appContext.hasBean(NRpcProtocol.class)) {
+                try {
+                    NRpcProtocol nRpcProtocol = nRpcProtocol();
+                    appContext.putBean("nRpcProtocol", nRpcProtocol);
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException("Failed to initialize NRpcProtocol", e);
+                }
+            }
+        }
+        
+        // 注册MQTT协议（如果启用）
+        if (Solon.cfg().getBool("server.netty.mqtt.enabled", false)) {
+            if (!appContext.hasBean(MqttProtocol.class)) {
+                Collection<InterceptHandler> interceptHandlers = appContext.getBeansOfType(InterceptHandler.class);
+                MqttProtocol mqttProtocol = mqttProtocol(interceptHandlers);
+                appContext.putBean("mqttProtocol", mqttProtocol);
+            }
+        }
+        
+        // 注册MySQL协议（如果启用）
+        if (Solon.cfg().getBool("server.netty.mysql.enabled", false)) {
+            // 注册MySQL日志监听器
+            if (!appContext.hasBean(WriterLogFilePacketListener.class)) {
+                WriterLogFilePacketListener logListener = mysqlWriterLogFilePacketListener();
+                appContext.putBean("mysqlWriterLogFilePacketListener", logListener);
+            }
+            
+            // 注册MySQL协议
+            if (!appContext.hasBean(MysqlProtocol.class)) {
+                Collection<MysqlPacketListener> mysqlPacketListeners = appContext.getBeansOfType(MysqlPacketListener.class);
+                MysqlProtocol mysqlProtocol = mysqlServerProtocol(mysqlPacketListeners);
+                appContext.putBean("mysqlProtocol", mysqlProtocol);
+            }
+        }
+    }
+    
+    @Override
+    public void stop() {
+        // Plugin shutdown logic
+        // 可以在这里添加资源清理代码
     }
 
     /**
      * Add a TCP service factory
-     *
-     * @param protocolHandlers protocolHandlers
-     * @param serverListeners  serverListeners
-     * @param beanFactory      beanFactory
-     * @return NettyTcpServerFactory
      */
-    @Bean("nettyServerFactory")
-    @ConditionalOnMissingBean(NettyTcpServerFactory.class)
-    public NettyTcpServerFactory nettyTcpServerFactory(Collection<ProtocolHandler> protocolHandlers,
-                                                       Collection<ServerListener> serverListeners,
-                                                       BeanFactory beanFactory) {
+    public NettyTcpServerFactory nettyTcpServerFactory(
+            Collection<ProtocolHandler> protocolHandlers,
+            Collection<ServerListener> serverListeners) {
         Supplier<DynamicProtocolChannelHandler> handlerSupplier = () -> {
             Class<? extends DynamicProtocolChannelHandler> type = nettyProperties.getChannelHandler();
             return type == DynamicProtocolChannelHandler.class ?
-                    new DynamicProtocolChannelHandler() : beanFactory.getBean(type);
+                    new DynamicProtocolChannelHandler() : appContext.getBean(type);
         };
         NettyTcpServerFactory tcpServerFactory = new NettyTcpServerFactory(nettyProperties, handlerSupplier);
-        tcpServerFactory.getProtocolHandlers().addAll(protocolHandlers);
-        tcpServerFactory.getServerListeners().addAll(serverListeners);
+        if (protocolHandlers != null) {
+            tcpServerFactory.getProtocolHandlers().addAll(protocolHandlers);
+        }
+        if (serverListeners != null) {
+            tcpServerFactory.getServerListeners().addAll(serverListeners);
+        }
         return tcpServerFactory;
     }
 
     /**
      * Add the Dubbo protocol registry
-     *
-     * @return DubboProtocol
      */
-    @Bean("dubboProtocol")
-    @ConditionalOnMissingBean(DubboProtocol.class)
-    @ConditionalOnProperty(prefix = "server.netty.dubbo", name = "enabled", matchIfMissing = false)
     public DubboProtocol dubboProtocol() {
         Supplier<ProxyFrontendHandler> proxySupplier = () -> {
             List<Application> applicationList = convert(nettyProperties.getDubbo().getRoutes());
@@ -113,139 +159,93 @@ public class NettyEmbeddedAutoConfiguration {
 
     /**
      * Add the RPC protocol registry
-     *
-     * @param factory factory
-     * @return NRpcProtocol
-     * @throws ClassNotFoundException ClassNotFoundException
      */
-    @Bean("nRpcProtocol")
-    @ConditionalOnMissingBean(NRpcProtocol.class)
-    @ConditionalOnProperty(prefix = "server.netty.nrpc", name = "enabled", matchIfMissing = false)
-    public NRpcProtocol nRpcProtocol(ConfigurableBeanFactory factory) throws ClassNotFoundException {
+    public NRpcProtocol nRpcProtocol() throws ClassNotFoundException {
         // Preheat codec
         Class.forName("com.github.netty.protocol.nrpc.codec.DataCodecUtil");
 
-        NRpcProtocolSpringAdapter protocol = new NRpcProtocolSpringAdapter(factory,nettyProperties.getApplication());
+        NRpcProtocolSolonAdapter protocol = new NRpcProtocolSolonAdapter(appContext, nettyProperties, null);
         protocol.setMessageMaxLength(nettyProperties.getNrpc().getServerMessageMaxLength());
         protocol.setMethodOverwriteCheck(nettyProperties.getNrpc().isServerMethodOverwriteCheck());
         protocol.setServerDefaultVersion(nettyProperties.getNrpc().getServerDefaultVersion());
-        protocol.setExecutorSupplier(newExecutorSupplier(nettyProperties.getNrpc().getThreadPool(), factory));
+        protocol.setExecutorSupplier(newExecutorSupplier(nettyProperties.getNrpc().getThreadPool()));
         return protocol;
     }
 
     /**
      * Add the HTTP protocol registry
-     *
-     * @param factory        factory
-     * @param resourceLoader resourceLoader
-     * @return HttpServletProtocol
      */
-    @Bean("httpServletProtocol")
-    @ConditionalOnMissingBean(HttpServletProtocol.class)
-    public HttpServletProtocol httpServletProtocol(ConfigurableBeanFactory factory, ResourceLoader resourceLoader) {
+    public HttpServletProtocol httpServletProtocol() {
         NettyProperties.HttpServlet http = nettyProperties.getHttpServlet();
-        Supplier<Executor> executorSupplier = newExecutorSupplier(http.getThreadPool(), factory);
-        Supplier<Executor> defaultExecutorSupplier = newDefaultExecutorSupplier(http.getThreadPool(), factory);
+        Supplier<Executor> executorSupplier = newExecutorSupplier(http.getThreadPool());
+        Supplier<Executor> defaultExecutorSupplier = newDefaultExecutorSupplier(http.getThreadPool());
 
-        HttpServletProtocolSpringAdapter protocol = new HttpServletProtocolSpringAdapter(
-                nettyProperties, resourceLoader.getClassLoader(), executorSupplier, defaultExecutorSupplier);
+        HttpServletProtocolSolonAdapter protocol = new HttpServletProtocolSolonAdapter(
+                nettyProperties, Solon.global().classLoader());
+        
+        if (executorSupplier != null) {
+            protocol.setExecutorSupplier(executorSupplier);
+        }
+        if (defaultExecutorSupplier != null) {
+            protocol.setDefaultExecutorSupplier(defaultExecutorSupplier);
+        }
+        
         protocol.setMaxInitialLineLength(http.getRequestMaxHeaderLineSize());
         protocol.setMaxHeaderSize(http.getRequestMaxHeaderSize());
         protocol.setMaxContentLength(http.getRequestMaxContentSize());
         protocol.setMaxBufferBytes(http.getResponseMaxBufferSize());
         protocol.setAutoFlushIdleMs(http.getAutoFlushIdleMs());
-        protocol.setMultipartPropertiesSupplier(() -> SpringUtil.getBean(factory, MultipartProperties.class));
-        protocol.setServerPropertiesSupplier(() -> SpringUtil.getBean(factory, ServerProperties.class));
+        
         return protocol;
     }
 
     /**
      * Add the MQTT protocol registry
-     *
-     * @return MqttProtocol
      */
-    @Bean("mqttProtocol")
-    @ConditionalOnMissingBean(MqttProtocol.class)
-    @ConditionalOnProperty(prefix = "server.netty.mqtt", name = "enabled", matchIfMissing = false)
-    public MqttProtocol mqttProtocol(ListableBeanFactory beanFactory) {
+    public MqttProtocol mqttProtocol(Collection<InterceptHandler> interceptHandlers) {
         NettyProperties.Mqtt mqtt = nettyProperties.getMqtt();
         MqttProtocol protocol = new MqttProtocol(mqtt.getMessageMaxLength(), mqtt.getNettyReaderIdleTimeSeconds(), mqtt.getAutoFlushIdleMs());
-        beanFactory.getBeansOfType(InterceptHandler.class).values().forEach(protocol::addInterceptHandler);
+        if (interceptHandlers != null) {
+            interceptHandlers.forEach(protocol::addInterceptHandler);
+        }
         return protocol;
     }
 
     /**
      * Add the MYSQL protocol registry
-     *
-     * @param beanFactory          ListableBeanFactory
-     * @param mysqlPacketListeners MysqlPacketListener
-     * @return MysqlProtocol
      */
-    @Bean("mysqlProtocol")
-    @ConditionalOnMissingBean(MysqlProtocol.class)
-    @ConditionalOnProperty(prefix = "server.netty.mysql", name = "enabled", matchIfMissing = false)
-    public MysqlProtocol mysqlServerProtocol(ListableBeanFactory beanFactory,
-                                             @Autowired(required = false) Collection<MysqlPacketListener> mysqlPacketListeners) {
+    public MysqlProtocol mysqlServerProtocol(Collection<MysqlPacketListener> mysqlPacketListeners) {
         NettyProperties.Mysql mysql = nettyProperties.getMysql();
         MysqlProtocol protocol = new MysqlProtocol(new InetSocketAddress(mysql.getMysqlHost(), mysql.getMysqlPort()));
         protocol.setMaxPacketSize(mysql.getPacketMaxLength());
         if (mysqlPacketListeners != null) {
             protocol.getMysqlPacketListeners().addAll(mysqlPacketListeners);
         }
-        protocol.getMysqlPacketListeners().sort(AnnotationAwareOrderComparator.INSTANCE);
-
+        
         if (mysql.getFrontendBusinessHandler() != MysqlFrontendBusinessHandler.class) {
-            String[] names = beanFactory.getBeanNamesForType(mysql.getFrontendBusinessHandler());
-            for (String name : names) {
-                if (beanFactory.isSingleton(name)) {
-                    throw new AssertionError("\nNettyProperties AssertionError(!isSingleton('" + name + "')) -> \n" +
-                            "Need is the prototype. please add  -> @org.springframework.context.annotation.Scope(\"prototype\").\n" +
-                            "server:\n" +
-                            "\tnetty:\n" +
-                            "\t\tmysql:\n" +
-                            "\t\t\tfrontendBusinessHandler: " + mysql.getFrontendBusinessHandler().getName() + "\n");
-                }
-            }
-            protocol.setFrontendBusinessHandler(() -> beanFactory.getBean(mysql.getFrontendBusinessHandler()));
+            protocol.setFrontendBusinessHandler(() -> BeanUtil.newInstance(mysql.getFrontendBusinessHandler()));
         }
 
         if (mysql.getBackendBusinessHandler() != MysqlBackendBusinessHandler.class) {
-            String[] names = beanFactory.getBeanNamesForType(mysql.getBackendBusinessHandler());
-            for (String name : names) {
-                if (beanFactory.isSingleton(name)) {
-                    throw new AssertionError("\nNettyProperties AssertionError(!isSingleton('" + name + "')) -> \n" +
-                            "Need is the prototype. please add  -> @org.springframework.context.annotation.Scope(\"prototype\").\n" +
-                            "server:\n" +
-                            "\tnetty:\n" +
-                            "\t\tmysql:\n" +
-                            "\t\t\tbackendBusinessHandler: " + mysql.getBackendBusinessHandler().getName() + "\n");
-                }
-            }
-            protocol.setBackendBusinessHandler(() -> beanFactory.getBean(mysql.getBackendBusinessHandler()));
+            protocol.setBackendBusinessHandler(() -> BeanUtil.newInstance(mysql.getBackendBusinessHandler()));
         }
         return protocol;
     }
 
     /**
      * mysql proxy WriterLogFilePacketListener
-     *
-     * @param environment Environment
-     * @return WriterLogFilePacketListener
      */
-    @Bean("mysqlWriterLogFilePacketListener")
-    @ConditionalOnMissingBean(WriterLogFilePacketListener.class)
-    @ConditionalOnProperty(prefix = "server.netty.mysql", name = {"enabled"}, matchIfMissing = false)
-    public WriterLogFilePacketListener mysqlWriterLogFilePacketListener(Environment environment) {
+    public WriterLogFilePacketListener mysqlWriterLogFilePacketListener() {
         NettyProperties.Mysql mysql = nettyProperties.getMysql();
         WriterLogFilePacketListener listener = new WriterLogFilePacketListener();
         listener.setEnable(mysql.getProxyLog().isEnable());
-        listener.setLogFileName(environment.resolvePlaceholders(mysql.getProxyLog().getLogFileName()));
-        listener.setLogPath(environment.resolvePlaceholders(mysql.getProxyLog().getLogPath()));
+        listener.setLogFileName(Solon.cfg().getProperty(mysql.getProxyLog().getLogFileName()));
+        listener.setLogPath(Solon.cfg().getProperty(mysql.getProxyLog().getLogPath()));
         listener.setLogWriteInterval(mysql.getProxyLog().getLogFlushInterval());
         return listener;
     }
 
-    protected Supplier<Executor> newExecutorSupplier(NettyProperties.HttpServlet.ServerThreadPool pool, ConfigurableBeanFactory factory) {
+    protected Supplier<Executor> newExecutorSupplier(NettyProperties.HttpServlet.ServerThreadPool pool) {
         Supplier<Executor> executorSupplier;
         if (pool.isEnable()) {
             if (pool.getExecutor() == NettyThreadPoolExecutor.class) {
@@ -253,7 +253,7 @@ public class NettyEmbeddedAutoConfiguration {
                 if (pool.getRejected() == HttpAbortPolicyWithReport.class) {
                     rejectedHandler = new HttpAbortPolicyWithReport(pool.getPoolName(), pool.getDumpPath(), "HttpServlet");
                 } else {
-                    rejectedHandler = factory.getBean(pool.getRejected());
+                    rejectedHandler = BeanUtil.newInstance(pool.getRejected());
                 }
 
                 String poolName = pool.getPoolName();
@@ -265,7 +265,7 @@ public class NettyEmbeddedAutoConfiguration {
                 NettyThreadPoolExecutor executor = newNettyThreadPoolExecutor(poolName, coreThreads, maxThreads, queues, keepAliveSeconds, allowCoreThreadTimeOut, rejectedHandler);
                 executorSupplier = () -> executor;
             } else {
-                Executor executor = factory.getBean(pool.getExecutor());
+                Executor executor = BeanUtil.newInstance(pool.getExecutor());
                 executorSupplier = () -> executor;
             }
         } else {
@@ -274,17 +274,17 @@ public class NettyEmbeddedAutoConfiguration {
         return executorSupplier;
     }
 
-    protected Supplier<Executor> newDefaultExecutorSupplier(NettyProperties.HttpServlet.ServerThreadPool pool, ConfigurableBeanFactory factory) {
+    protected Supplier<Executor> newDefaultExecutorSupplier(NettyProperties.HttpServlet.ServerThreadPool pool) {
         RejectedExecutionHandler rejectedHandler;
         if (pool.getRejected() == HttpAbortPolicyWithReport.class) {
             rejectedHandler = new HttpAbortPolicyWithReport(pool.getPoolName(), pool.getDumpPath(), "Default Pool HttpServlet");
         } else {
-            rejectedHandler = factory.getBean(pool.getRejected());
+            rejectedHandler = BeanUtil.newInstance(pool.getRejected());
         }
         return new LazyPool(this, pool, rejectedHandler);
     }
 
-    protected Supplier<Executor> newExecutorSupplier(NettyProperties.Nrpc.ServerThreadPool pool, ConfigurableBeanFactory factory) {
+    protected Supplier<Executor> newExecutorSupplier(NettyProperties.Nrpc.ServerThreadPool pool) {
         Supplier<Executor> executorSupplier;
         if (pool.isEnable()) {
             if (pool.getExecutor() == NettyThreadPoolExecutor.class) {
@@ -292,7 +292,7 @@ public class NettyEmbeddedAutoConfiguration {
                 if (pool.getRejected() == AbortPolicyWithReport.class) {
                     rejectedHandler = new AbortPolicyWithReport(pool.getPoolName(), pool.getDumpPath(), "Nrpc");
                 } else {
-                    rejectedHandler = factory.getBean(pool.getRejected());
+                    rejectedHandler = BeanUtil.newInstance(pool.getRejected());
                 }
 
                 String poolName = pool.getPoolName();
@@ -304,7 +304,7 @@ public class NettyEmbeddedAutoConfiguration {
                 NettyThreadPoolExecutor executor = newNettyThreadPoolExecutor(poolName, coreThreads, maxThreads, queues, keepAliveSeconds, allowCoreThreadTimeOut, rejectedHandler);
                 executorSupplier = () -> executor;
             } else {
-                executorSupplier = () -> factory.getBean(pool.getExecutor());
+                executorSupplier = () -> BeanUtil.newInstance(pool.getExecutor());
             }
         } else {
             executorSupplier = () -> null;

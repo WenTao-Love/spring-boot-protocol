@@ -6,11 +6,9 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
-import javax.print.attribute.standard.Compression;
-
 import org.noear.solon.core.AppClassLoader;
-import org.noear.solon.core.util.ClassUtil;
 import org.noear.solon.server.prop.impl.HttpServerProps;
+import org.noear.solon.core.util.ClassUtil;
 
 import com.github.netty.core.AbstractNettyServer;
 import com.github.netty.core.util.LoggerFactoryX;
@@ -26,7 +24,7 @@ import com.github.netty.protocol.servlet.util.Protocol;
 import com.github.netty.springboot.NettyProperties;
 import com.github.netty.springboot.SolonUtil.Ssl;
 import com.github.netty.springboot.SolonUtil.SslBundle;
-import com.github.netty.springboot.SpringUtil;
+import com.github.netty.springboot.SolonUtil.SslBundles;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -34,20 +32,31 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslContextBuilder;
 
 /**
- * HttpServlet protocol registry (spring adapter)
+ * HttpServlet protocol registry (solon adapter)
  *
  * @author wangzihao
  * 2018/11/12/012
  */
-public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
-    private static final LoggerX LOGGER = LoggerFactoryX.getLogger(HttpServletProtocol.class);
+public class HttpServletProtocolSolonAdapter extends HttpServletProtocol {
+    private static final LoggerX LOGGER = LoggerFactoryX.getLogger(HttpServletProtocolSolonAdapter.class);
     private final NettyProperties properties;
     private Supplier<HttpServerProps> serverPropertiesSupplier;
+    private Supplier<Executor> executorSupplier;
+    private Supplier<Executor> defaultExecutorSupplier;
 
-    public HttpServletProtocolSpringAdapter(NettyProperties properties, ClassLoader classLoader,
-                                            Supplier<Executor> executorSupplier, Supplier<Executor> defaultExecutorSupplier) {
-        super(new com.github.netty.protocol.servlet.ServletContext(classLoader == null ? AppClassLoader.global() : classLoader), executorSupplier, defaultExecutorSupplier);
+    public HttpServletProtocolSolonAdapter(NettyProperties properties, ClassLoader classLoader) {
+        super(new com.github.netty.protocol.servlet.ServletContext(classLoader == null ? AppClassLoader.global() : classLoader), null, null);
         this.properties = properties;
+    }
+    
+    public void setExecutorSupplier(Supplier<Executor> executorSupplier) {
+        this.executorSupplier = executorSupplier;
+        super.setExecutorSupplier(executorSupplier);
+    }
+    
+    public void setDefaultExecutorSupplier(Supplier<Executor> defaultExecutorSupplier) {
+        this.defaultExecutorSupplier = defaultExecutorSupplier;
+        super.setDefaultExecutorSupplier(defaultExecutorSupplier);
     }
 
 
@@ -56,11 +65,10 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
     }
 
     /**
-     * skip for {@link NettyRequestUpgradeStrategy}
+     * WebSocket upgrade handler
      *
      * @param ctx     netty ctx
      * @param request netty request
-     * @see NettyRequestUpgradeStrategy the handler
      */
     @Override
     public void upgradeWebsocket(ChannelHandlerContext ctx, HttpRequest request) {
@@ -115,14 +123,14 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
         }
         servletContext.getNotExistBodyParameters().addAll(Arrays.asList(httpServlet.getNotExistBodyParameter()));
 
-        Compression compression = webServerFactory.getCompression();
-        if (compression != null && compression.getEnabled()) {
-            super.setEnableContentCompression(compression.getEnabled());
-            super.setContentSizeThreshold((SpringUtil.getNumberBytes(compression, "getMinResponseSize")).intValue());
+        NettyProperties.HttpServlet.ServerCompression compression = properties.getHttpServlet().getCompression();
+        if (compression != null && compression.isEnabled()) {
+            super.setEnableContentCompression(compression.isEnabled());
+            super.setContentSizeThreshold((int)compression.getMinResponseSize());
             super.setCompressionMimeTypes(compression.getMimeTypes().clone());
         }
         if (serverProperties != null) {
-            super.setMaxHeaderSize((SpringUtil.getNumberBytes(serverProperties, "getMaxHttpRequestHeaderSize")).intValue());//maxHttpHeaderSize -> maxHttpRequestHeaderSize
+            super.setMaxHeaderSize((int)serverProperties.getMaxHttpRequestHeaderSize());
         }
         Boolean enableH2 = httpServlet.getEnableH2();
         if (enableH2 == null) {
@@ -135,22 +143,18 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
         // ws
         super.setEnableWebsocket(httpServlet.isEnableWebsocket());
         // https, wss
-        Ssl ssl = webServerFactory.getSsl();
+        NettyProperties.Ssl ssl = properties.getSsl();
         if (ssl != null && ssl.isEnabled()) {
-            SslBundles sslBundles = webServerFactory.getSslBundles();
-            SslBundle sslStoreProvider = sslBundles.getBundle(ssl.getBundle());
-            SslContextBuilder sslContextBuilder = SpringUtil.newSslContext(ssl, sslStoreProvider);
+            SslContextBuilder sslContextBuilder = SolonUtil.newSslContext(ssl);
             super.setSslContextBuilder(sslContextBuilder);
         }
 
         String location = null;
-        if (multipartProperties != null && multipartProperties.isEnabled()) {
-            Number maxRequestSize = SpringUtil.getNumberBytes(multipartProperties, "getMaxRequestSize");
-            Number fileSizeThreshold = SpringUtil.getNumberBytes(multipartProperties, "getFileSizeThreshold");
-
-            super.setMaxChunkSize(maxRequestSize.longValue());
-            servletContext.setFileSizeThreshold(fileSizeThreshold.longValue());
-            location = multipartProperties.getLocation();
+        NettyProperties.HttpServlet.MultipartConfig multipartConfig = properties.getHttpServlet().getMultipart();
+        if (multipartConfig != null && multipartConfig.isEnabled()) {
+            super.setMaxChunkSize(multipartConfig.getMaxRequestSize());
+            servletContext.setFileSizeThreshold(multipartConfig.getFileSizeThreshold());
+            location = multipartConfig.getLocation();
         }
 
         if (location != null && !location.isEmpty()) {
@@ -160,22 +164,19 @@ public class HttpServletProtocolSpringAdapter extends HttpServletProtocol {
         }
 
         //Error page
-        for (ErrorPage errorPage : webServerFactory.getErrorPages()) {
-            ServletErrorPage servletErrorPage = new ServletErrorPage(errorPage.getStatusCode(), errorPage.getException(), errorPage.getPath());
-            servletContext.getErrorPageManager().add(servletErrorPage);
+        List<NettyProperties.ErrorPage> errorPages = properties.getHttpServlet().getErrorPages();
+        if (errorPages != null) {
+            for (NettyProperties.ErrorPage errorPage : errorPages) {
+                ServletErrorPage servletErrorPage = new ServletErrorPage(errorPage.getStatusCode(), errorPage.getException(), errorPage.getPath());
+                servletContext.getErrorPageManager().add(servletErrorPage);
+            }
         }
 
         // cookieSameSite
-        List<CookieSameSiteSupplier> cookieSameSiteSuppliers = webServerFactory.getCookieSameSiteSuppliers();
-        servletContext.setCookieSameSiteSupplier((cookie, httpServletRequest) -> {
-            for (CookieSameSiteSupplier supplier : cookieSameSiteSuppliers) {
-                org.springframework.boot.web.server.Cookie.SameSite sameSite = supplier.getSameSite(cookie);
-                if (sameSite != null) {
-                    return sameSite.attributeValue();
-                }
-            }
-            return null;
-        });
+        if (properties.getHttpServlet().getCookieSameSite() != null) {
+            final String sameSiteValue = properties.getHttpServlet().getCookieSameSite();
+            servletContext.setCookieSameSiteSupplier((cookie, httpServletRequest) -> sameSiteValue);
+        }
     }
 
     /**

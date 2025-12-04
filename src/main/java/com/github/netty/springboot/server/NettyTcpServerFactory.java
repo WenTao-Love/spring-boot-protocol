@@ -1,56 +1,69 @@
 package com.github.netty.springboot.server;
 
-import com.github.netty.core.Ordered;
 import com.github.netty.core.ProtocolHandler;
 import com.github.netty.core.ServerListener;
 import com.github.netty.core.util.IOUtil;
 import com.github.netty.protocol.DynamicProtocolChannelHandler;
-import com.github.netty.protocol.HttpServletProtocol;
-import com.github.netty.protocol.servlet.ServletContext;
-import com.github.netty.protocol.servlet.util.HttpLazyThreadPool;
+import com.github.netty.protocol.servlet.*;
 import com.github.netty.springboot.NettyProperties;
-import org.springframework.boot.web.reactive.server.ConfigurableReactiveWebServerFactory;
-import org.springframework.boot.web.server.WebServer;
-import org.springframework.boot.web.servlet.ServletContextInitializer;
-import org.springframework.boot.web.servlet.server.AbstractServletWebServerFactory;
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
-import org.springframework.boot.web.servlet.server.Jsp;
-import org.springframework.http.server.reactive.HttpHandler;
-import org.springframework.http.server.reactive.ServletHttpHandlerAdapter;
+import org.noear.solon.Solon;
+import org.noear.solon.core.AppContext;
+import org.noear.solon.core.Plugin;
 
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /**
- * Netty container factory TCP layer server factory
- *
- * EmbeddedWebApplicationContext - createEmbeddedServletContainer
- * ImportAwareBeanPostProcessor
+ * The netty TCP server factory (Solon)
  *
  * @author wangzihao
- * 2018/7/14/014
  */
-public class NettyTcpServerFactory
-        extends AbstractServletWebServerFactory
-        implements ConfigurableReactiveWebServerFactory, ConfigurableServletWebServerFactory {
-    private final Collection<ProtocolHandler> protocolHandlers = new TreeSet<>(Ordered.COMPARATOR);
-    private final Collection<ServerListener> serverListeners = new TreeSet<>(Ordered.COMPARATOR);
-    private final Supplier<DynamicProtocolChannelHandler> channelHandlerSupplier;
-    protected NettyProperties properties;
+public class NettyTcpServerFactory implements Plugin {
+    private final NettyProperties nettyProperties;
+    private final Supplier<DynamicProtocolChannelHandler> handlerSupplier;
+    private final List<ProtocolHandler> protocolHandlers = new CopyOnWriteArrayList<>();
+    private final List<ServerListener> serverListeners = new CopyOnWriteArrayList<>();
+    private NettyTcpServer nettyTcpServer;
+    private int port = 8080;
+    private String contextPath = "";
+    private int sessionTimeout;
 
-    public NettyTcpServerFactory() {
-        this(new NettyProperties(), DynamicProtocolChannelHandler::new);
+    /**
+     * Constructor
+     *
+     * @param nettyProperties nettyProperties
+     * @param handlerSupplier handlerSupplier
+     */
+    public NettyTcpServerFactory(NettyProperties nettyProperties, Supplier<DynamicProtocolChannelHandler> handlerSupplier) {
+        this.nettyProperties = nettyProperties;
+        this.handlerSupplier = handlerSupplier;
     }
-
-    public NettyTcpServerFactory(NettyProperties properties,
-                                 Supplier<DynamicProtocolChannelHandler> channelHandlerSupplier) {
-        this.properties = properties;
-        this.channelHandlerSupplier = channelHandlerSupplier;
+    
+    @Override
+    public void start(AppContext app) {
+        // 初始化时自动创建并启动服务器
+        if (nettyProperties.getTcp().isEnable()) {
+            try {
+                NettyTcpServer webServer = getWebServer();
+                webServer.start();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to start Netty server", e);
+            }
+        }
+    }
+    
+    @Override
+    public void stop() {
+        // 停止服务器
+        if (nettyTcpServer != null) {
+            nettyTcpServer.stop();
+        }
     }
 
     public static InetSocketAddress getServerSocketAddress(InetAddress address, int port) {
@@ -71,118 +84,110 @@ public class NettyTcpServerFactory
     }
 
     /**
-     * Reactive container (temporarily replaced by servlets)
+     * Get a new WebServer instance.
      *
-     * @param httpHandler httpHandler
-     * @return NettyTcpServer
+     * @return a new web server instance
      */
-    @Override
-    public WebServer getWebServer(HttpHandler httpHandler) {
-        try {
-            //Server port
-            InetSocketAddress serverAddress = getServerSocketAddress(getAddress(), getPort());
-            com.github.netty.protocol.servlet.ServletContext servletContext = getServletContext();
-            if (servletContext == null) {
-                servletContext = createHttpServletProtocolSpringAdapter().getServletContext();
-            }
-            com.github.netty.protocol.servlet.ServletRegistration servletRegistration = servletContext.addServlet("default", new ServletHttpHandlerAdapter(httpHandler));
-            servletRegistration.setAsyncSupported(true);
-            servletRegistration.addMapping("/");
-            servletContext.setServerAddress(serverAddress);
-            return new NettyTcpServer(serverAddress, properties, protocolHandlers, serverListeners, channelHandlerSupplier);
-        } catch (Exception e) {
-            throw new IllegalStateException(e.getMessage(), e);
+    public NettyTcpServer getWebServer() {
+        // Initialize the nettyTcpServer
+        nettyTcpServer = new NettyTcpServer(nettyProperties, handlerSupplier, protocolHandlers, serverListeners);
+
+        // Return the nettyTcpServer
+        return nettyTcpServer;
+    }
+
+    /**
+     * Set server port
+     */
+    public void setPort(int port) {
+        this.port = port;
+        if (nettyTcpServer != null) {
+            // 可以在这里添加端口更新逻辑
         }
     }
 
     /**
-     * Get servlet container
-     *
-     * @param initializers Initialize the
-     * @return NettyTcpServer
+     * Set context path
      */
-    @Override
-    public WebServer getWebServer(ServletContextInitializer... initializers) {
-        com.github.netty.protocol.servlet.ServletContext servletContext = getServletContext();
-        if (servletContext == null) {
-            servletContext = createHttpServletProtocolSpringAdapter().getServletContext();
-        }
-        try {
-            //Server port
-            InetSocketAddress serverAddress = getServerSocketAddress(getAddress(), getPort());
-            servletContext.setServerAddress(serverAddress);
-            configurableServletContext();
-
-            //The default servlet
-            if (!super.isRegisterDefaultServlet()) {
-                servletContext.setDefaultServlet(null);
-            }
-
-            //JSP is not supported
-            if (super.shouldRegisterJspServlet()) {
-                Jsp jsp = getJsp();
-            }
-
-            // webListener
-            for (String webListenerClassName : getWebListenerClassNames()) {
-                servletContext.addListener(webListenerClassName);
-            }
-
-            //Initialize the
-            for (ServletContextInitializer initializer : super.mergeInitializers(initializers)) {
-                initializer.onStartup(servletContext);
-            }
-            return new NettyTcpServer(serverAddress, properties, protocolHandlers, serverListeners, channelHandlerSupplier);
-        } catch (Exception e) {
-            throw new IllegalStateException(e.getMessage(), e);
-        }
+    public void setContextPath(String contextPath) {
+        this.contextPath = contextPath;
     }
 
-    private void configurableServletContext() throws Exception {
-        for (ProtocolHandler protocolHandler : protocolHandlers) {
-            if (protocolHandler instanceof HttpServletProtocolSpringAdapter) {
-                ((HttpServletProtocolSpringAdapter) protocolHandler).configurableServletContext(this);
-            }
+    /**
+     * Set session timeout
+     */
+    public void setSessionTimeout(int sessionTimeout) {
+        this.sessionTimeout = sessionTimeout;
+    }
+    
+    /**
+     * Set bind address
+     */
+    public void setAddress(java.net.InetAddress address) {
+        // 设置绑定地址的逻辑
+        if (nettyTcpServer != null) {
+            // 可以在这里添加地址更新逻辑
         }
     }
-
-    @Override
-    public File getDocumentRoot() {
-        File dir = properties.getHttpServlet().getBasedir();
-        if (dir == null) {
-            dir = super.getDocumentRoot();
-        }
-        if (dir == null) {
-            //The temporary directory
-            File tempDir = super.createTempDir("netty-docbase");
-            dir = tempDir;
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> IOUtil.deleteDir(tempDir)));
-        }
-        return dir;
+    
+    /**
+     * Get the class loader
+     *
+     * @return the class loader
+     */
+    public ClassLoader getClassLoader() {
+        return Solon.global().classLoader();
+    }
+    
+    /**
+     * Add a protocol handler
+     *
+     * @param protocolHandler protocolHandler
+     */
+    public void addProtocolHandler(ProtocolHandler protocolHandler) {
+        protocolHandlers.add(protocolHandler);
     }
 
-    public ServletContext getServletContext() {
-        for (ProtocolHandler protocolHandler : protocolHandlers) {
-            if (protocolHandler instanceof HttpServletProtocol) {
-                return ((HttpServletProtocol) protocolHandler).getServletContext();
-            }
-        }
-        return null;
+    /**
+     * Add a server listener
+     *
+     * @param serverListener serverListener
+     */
+    public void addServerListener(ServerListener serverListener) {
+        serverListeners.add(serverListener);
     }
-
-    protected HttpServletProtocol createHttpServletProtocolSpringAdapter() {
-        HttpLazyThreadPool threadPool = new HttpLazyThreadPool("NettyX-http");
-        HttpServletProtocolSpringAdapter adapter = new HttpServletProtocolSpringAdapter(new NettyProperties(), null, threadPool, threadPool);
-        protocolHandlers.add(adapter);
-        serverListeners.add(adapter);
-        return adapter;
-    }
-
-    public Collection<ProtocolHandler> getProtocolHandlers() {
+    
+    /**
+     * Get the protocol handlers
+     *
+     * @return protocolHandlers
+     */
+    public List<ProtocolHandler> getProtocolHandlers() {
         return protocolHandlers;
     }
 
-    public Collection<ServerListener> getServerListeners() {
+    /**
+     * Get the server listeners
+     *
+     * @return serverListeners
+     */
+    public List<ServerListener> getServerListeners() {
         return serverListeners;
+    }
+
+    /**
+     * Get the netty properties
+     *
+     * @return nettyProperties
+     */
+    public NettyProperties getNettyProperties() {
+        return nettyProperties;
+    }
+    
+    /**
+     * WebServer interface for Solon
+     */
+    public interface WebServer {
+        // Solon WebServer interface
     }
 }

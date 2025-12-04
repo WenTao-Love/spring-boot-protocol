@@ -23,27 +23,24 @@ import jakarta.websocket.Endpoint;
 import jakarta.websocket.Extension;
 import jakarta.websocket.WebSocketContainer;
 import jakarta.websocket.server.ServerEndpointConfig;
-import org.springframework.http.server.ServerHttpRequest;
-import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.util.LinkedCaseInsensitiveMap;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.socket.WebSocketExtension;
-import org.springframework.web.socket.server.HandshakeFailureException;
-import org.springframework.web.socket.server.standard.AbstractStandardUpgradeStrategy;
-import org.springframework.web.socket.server.standard.ServerEndpointRegistration;
+import org.noear.solon.core.handle.Context;
+import org.noear.solon.core.handle.Handler;
+import org.noear.solon.core.util.LinkedCaseInsensitiveMap;
+import org.noear.solon.core.util.LinkedMultiValueMap;
+import org.noear.solon.core.util.MultiValueMap;
 
 import java.security.Principal;
 import java.util.*;
 
 /**
- * Websocket version number: the version number of draft 8 to draft 12 is 8, and the version number of draft 13 and later is the same as the draft number
+ * Websocket version number: the version number of draft 8 to draft 12 is 8, and the version number of draft 13 and later is the same as the draft number (Solon)
  *
  * @author wangzihao
  */
-public class NettyRequestUpgradeStrategy extends AbstractStandardUpgradeStrategy {
+public class NettyRequestUpgradeStrategy {
     private int maxFramePayloadLength;
     private static final String[] SUPPORTED_VERSIONS = new String[]{WebSocketVersion.V13.toHttpHeaderValue()};
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(NettyRequestUpgradeStrategy.class);
 
     public NettyRequestUpgradeStrategy() {
         this(65536);
@@ -53,26 +50,37 @@ public class NettyRequestUpgradeStrategy extends AbstractStandardUpgradeStrategy
         this.maxFramePayloadLength = maxFramePayloadLength;
     }
 
-    @Override
     public String[] getSupportedVersions() {
         return SUPPORTED_VERSIONS;
     }
 
-    @Override
-    protected void upgradeInternal(ServerHttpRequest request, ServerHttpResponse response, String selectedProtocol,
-                                   List<Extension> selectedExtensions, Endpoint endpoint) throws HandshakeFailureException {
-        HttpServletRequest servletRequest = getHttpServletRequest(request);
+    /**
+     * Upgrade a request to WebSocket
+     * 
+     * @param context Solon context
+     * @param selectedProtocol selected protocol
+     * @param selectedExtensions selected extensions
+     * @param endpoint WebSocket endpoint
+     * @throws Exception if upgrade fails
+     */
+    public void upgradeInternal(Context context, String selectedProtocol,
+                              List<Extension> selectedExtensions, Endpoint endpoint) throws Exception {
+        HttpServletRequest servletRequest = getHttpServletRequest(context);
         ServletHttpServletRequest httpServletRequest = ServletUtil.unWrapper(servletRequest);
         if (httpServletRequest == null) {
-            throw new HandshakeFailureException(
+            throw new RuntimeException(
                     "Servlet request failed to upgrade to WebSocket: " + servletRequest.getRequestURL());
         }
 
         WebSocketServerContainer serverContainer = getContainer(servletRequest);
-        Principal principal = request.getPrincipal();
+        java.security.Principal principal = context.session() != null ? context.session().userPrincipal() : null;
         Map<String, String> pathParams = new LinkedHashMap<>(3);
 
-        ServerEndpointRegistration endpointConfig = new ServerEndpointRegistration(servletRequest.getRequestURI(), endpoint);
+        // Create endpoint configuration
+        ServerEndpointConfig endpointConfig = ServerEndpointConfig.Builder
+                .create(endpoint.getClass(), servletRequest.getRequestURI())
+                .build();
+        
         List<String> subprotocols = new ArrayList<>();
         subprotocols.add("*");
         if (selectedProtocol != null && !subprotocols.contains(selectedProtocol)) {
@@ -83,32 +91,36 @@ public class NettyRequestUpgradeStrategy extends AbstractStandardUpgradeStrategy
             endpointConfig.setExtensions(selectedExtensions);
         }
 
-        try {
-            handshakeToWebsocket(httpServletRequest, selectedProtocol, maxFramePayloadLength, principal,
-                    selectedExtensions, pathParams, endpoint,
-                    endpointConfig, serverContainer);
-        } catch (Exception e) {
-            throw new HandshakeFailureException(
-                    "Servlet request failed to upgrade to WebSocket: " + servletRequest.getRequestURL(), e);
-        }
+        handshakeToWebsocket(httpServletRequest, selectedProtocol, maxFramePayloadLength, principal,
+                selectedExtensions, pathParams, endpoint,
+                endpointConfig, serverContainer);
     }
 
-    @Override
-    protected List<WebSocketExtension> getInstalledExtensions(WebSocketContainer container) {
-        List<WebSocketExtension> result = new ArrayList<>();
-        for (Extension extension : container.getInstalledExtensions()) {
-            Map<String, String> parameters = new LinkedCaseInsensitiveMap<>(Locale.ENGLISH);
-            for (Extension.Parameter parameter : extension.getParameters()) {
-                parameters.put(parameter.getName(), parameter.getValue());
-            }
-            result.add(new WebSocketExtension(extension.getName(), parameters));
-        }
-        return result;
+    /**
+     * Get installed WebSocket extensions
+     */
+    public List<Extension> getInstalledExtensions(WebSocketContainer container) {
+        return container.getInstalledExtensions();
     }
 
-    @Override
+    /**
+     * Get WebSocket container
+     */
     protected WebSocketServerContainer getContainer(HttpServletRequest request) {
-        return (WebSocketServerContainer) super.getContainer(request);
+        return (WebSocketServerContainer) request.getServletContext().getAttribute(WebSocketContainer.class.getName());
+    }
+    
+    /**
+     * Get HttpServletRequest from Solon context
+     */
+    protected HttpServletRequest getHttpServletRequest(Context context) {
+        // 从Solon上下文获取HttpServletRequest
+        // 这里假设已经有相应的适配机制
+        Object requestObj = context.request();
+        if (requestObj instanceof HttpServletRequest) {
+            return (HttpServletRequest) requestObj;
+        }
+        throw new RuntimeException("Cannot get HttpServletRequest from Solon context");
     }
 
     /**

@@ -11,8 +11,8 @@ import org.noear.solon.annotation.Condition;
 import org.noear.solon.annotation.Import;
 
 import com.github.netty.core.AbstractProtocol;
-import com.github.netty.springboot.server.HttpServletProtocolSpringAdapter;
-import com.github.netty.springboot.server.NRpcProtocolSpringAdapter;
+import com.github.netty.springboot.server.HttpServletProtocolSolonAdapter;
+import com.github.netty.springboot.server.NRpcProtocolSolonAdapter;
 import com.github.netty.springboot.server.NettyEmbeddedAutoConfiguration;
 import com.github.netty.springboot.server.NettyRequestUpgradeStrategy;
 import com.github.netty.springboot.server.NettyTcpServerFactory;
@@ -21,9 +21,9 @@ import com.github.netty.springboot.server.NettyTcpServerFactory;
  * Enable embedded TCP container.
  * It will enable.
  * 1. http server protocol,
- * Servlet Web or Reactive Web. {@link NettyTcpServerFactory} {@link HttpServletProtocolSpringAdapter}
+ * Servlet Web or Reactive Web. {@link NettyTcpServerFactory} {@link HttpServletProtocolSolonAdapter}
  * Websocket. {@link NettyRequestUpgradeStrategy}
- * 2. rpc server protocol. {@link NRpcProtocolSpringAdapter}
+ * 2. rpc server protocol. {@link NRpcProtocolSolonAdapter}
  * 3. and user-defined protocols..
  * 
  * If you want to add your own protocol,  you only need implement {@link AbstractProtocol}, Next restart, do not need to do other things
@@ -94,8 +94,8 @@ import com.github.netty.springboot.server.NettyTcpServerFactory;
  * @see com.github.netty.springboot.NettyProperties
  * @see com.github.netty.springboot.server.NettyEmbeddedAutoConfiguration
  * @see com.github.netty.springboot.server.NettyTcpServerFactory
- * @see com.github.netty.springboot.server.HttpServletProtocolSpringAdapter
- * @see NRpcProtocolSpringAdapter
+ * @see com.github.netty.springboot.server.HttpServletProtocolSolonAdapter
+ * @see NRpcProtocolSolonAdapter
  * @see com.github.netty.springboot.server.NettyRequestUpgradeStrategy
  * @see com.github.netty.core.AbstractProtocol
  */

@@ -15,20 +15,19 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.internal.PlatformDependent;
-import org.springframework.boot.web.server.WebServer;
-import org.springframework.boot.web.server.WebServerException;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.function.Supplier;
+import org.noear.solon.core.Lifecycle;
 
 /**
- * Netty container TCP layer server
+ * Netty container TCP layer server (Solon)
  *
  * @author wangzihao
  * 2018/7/14/014
  */
-public class NettyTcpServer extends AbstractNettyServer implements WebServer {
+public class NettyTcpServer extends AbstractNettyServer implements Lifecycle {
     /**
      * Container configuration information
      */
@@ -49,7 +48,7 @@ public class NettyTcpServer extends AbstractNettyServer implements WebServer {
     }
 
     @Override
-    public void start() throws WebServerException {
+    public void start() {
         try {
             super.setIoRatio(properties.getServerIoRatio());
             super.setIoThreadCount(properties.getServerIoThreads());
@@ -59,12 +58,12 @@ public class NettyTcpServer extends AbstractNettyServer implements WebServer {
             }
             super.run();
         } catch (Exception e) {
-            throw new WebServerException("tcp server start fail.. cause = " + e, e);
+            throw new RuntimeException("tcp server start fail.. cause = " + e, e);
         }
     }
 
     @Override
-    public void stop() throws WebServerException {
+    public void stop() {
         for (ServerListener serverListener : serverListeners) {
             try {
                 serverListener.onServerStop(this);
@@ -79,8 +78,13 @@ public class NettyTcpServer extends AbstractNettyServer implements WebServer {
                 tcpChannel.close();
             }
         } catch (Exception e) {
-            throw new WebServerException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
+    }
+    
+    @Override
+    public void destroy() {
+        stop();
     }
 
     @Override
@@ -173,4 +177,6 @@ public class NettyTcpServer extends AbstractNettyServer implements WebServer {
     public Collection<ServerListener> getServerListeners() {
         return serverListeners;
     }
+    
+    // 已直接实现Solon的Lifecycle接口
 }
