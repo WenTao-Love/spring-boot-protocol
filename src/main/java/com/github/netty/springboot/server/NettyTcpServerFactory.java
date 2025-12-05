@@ -7,6 +7,7 @@ import com.github.netty.protocol.DynamicProtocolChannelHandler;
 import com.github.netty.protocol.servlet.*;
 import com.github.netty.springboot.NettyProperties;
 import org.noear.solon.Solon;
+import org.noear.solon.core.AppClassLoader;
 import org.noear.solon.core.AppContext;
 import org.noear.solon.core.Plugin;
 
@@ -136,7 +137,7 @@ public class NettyTcpServerFactory implements Plugin {
      * @return the class loader
      */
     public ClassLoader getClassLoader() {
-        return Solon.global().classLoader();
+        return AppClassLoader.global();
     }
     
     /**

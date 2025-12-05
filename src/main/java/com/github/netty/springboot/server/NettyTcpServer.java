@@ -82,7 +82,6 @@ public class NettyTcpServer extends AbstractNettyServer implements Lifecycle {
         }
     }
     
-    @Override
     public void destroy() {
         stop();
     }
@@ -178,5 +177,4 @@ public class NettyTcpServer extends AbstractNettyServer implements Lifecycle {
         return serverListeners;
     }
     
-    // 已直接实现Solon的Lifecycle接口
 }
