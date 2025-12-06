@@ -1,0 +1,165 @@
+package com.github.netty.protocol.servlet;
+
+import com.github.netty.core.util.Recyclable;
+import com.github.netty.core.util.Wrapper;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelProgressivePromise;
+import io.netty.handler.stream.ChunkedInput;
+import jakarta.servlet.WriteListener;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.function.Consumer;
+
+/**
+ * Servlets output streams (wrapper classes) that control access to the flow
+ *
+ * @author wangzihao
+ */
+public class ServletOutputStreamWrapper extends jakarta.servlet.ServletOutputStream
+        implements Wrapper<ServletOutputStream>, Recyclable, NettyOutputStream {
+    /**
+     * The source data
+     */
+    private ServletOutputStream source;
+    /**
+     * Pause symbol
+     */
+    private boolean suspendFlag = false;
+
+    private final ChannelFutureListener closeListener;
+
+    public ServletOutputStreamWrapper(ChannelFutureListener closeListener) {
+        this.closeListener = closeListener;
+    }
+
+    /**
+     * Whether to pause the operation output stream
+     *
+     * @return boolean suspendFlag
+     */
+    public boolean isSuspendFlag() {
+        return suspendFlag;
+    }
+
+    /**
+     * Set (on/off) to pause the output operation
+     *
+     * @param suspendFlag True = pause, false= resume
+     */
+    public void setSuspendFlag(boolean suspendFlag) {
+        this.suspendFlag = suspendFlag;
+    }
+
+  //原来的write(ByteBuffer buffer)和ServletOutputStream同名方法冲突了
+    @Override
+    public ChannelProgressivePromise writeJDK(ByteBuffer httpBody) throws IOException {
+        return source.writeJDK(httpBody);
+    }
+
+    @Override
+    public ChannelProgressivePromise write(ByteBuf httpBody) throws IOException {
+        return source.write(httpBody);
+    }
+
+    @Override
+    public ChannelProgressivePromise write(ChunkedInput httpBody) throws IOException {
+        return source.write(httpBody);
+    }
+
+    @Override
+    public ChannelProgressivePromise write(File file, long position, long count) throws IOException {
+        return source.write(file, position, count);
+    }
+
+    @Override
+    public ChannelProgressivePromise write(File file) throws IOException {
+        return source.write(file);
+    }
+
+    @Override
+    public boolean isReady() {
+        return source != null && source.isReady();
+    }
+
+    @Override
+    public void setWriteListener(WriteListener listener) {
+        if(source != null) {
+            source.setWriteListener(listener);
+        }
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+        if (isSuspendFlag() || source == null) {
+            return;
+        }
+        source.write(b);
+    }
+
+    @Override
+    public void close() {
+        if (isSuspendFlag() || source == null) {
+            return;
+        }
+        source.close();
+    }
+
+    @Override
+    public void flush() throws IOException {
+        if (isSuspendFlag() || source == null) {
+            return;
+        }
+        source.flush();
+    }
+
+    public void resetBuffer() {
+        if (isSuspendFlag() || source == null) {
+            return;
+        }
+        source.resetBuffer();
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        if (isSuspendFlag() || source == null) {
+            return;
+        }
+        source.write(b, off, len);
+    }
+
+    @Override
+    public void write(byte[] b) throws IOException {
+        if (isSuspendFlag() || source == null) {
+            return;
+        }
+        source.write(b);
+    }
+
+    @Override
+    public void wrap(ServletOutputStream source) {
+        if (closeListener != null) {
+            source.setCloseListener(closeListener);
+        }
+        this.source = source;
+    }
+
+    @Override
+    public ServletOutputStream unwrap() {
+        return source;
+    }
+
+    @Override
+    public <T> void recycle(Consumer<T> consumer) {
+        ServletOutputStream out = source;
+        if (out != null) {
+            source = null;
+            out.recycle(consumer);
+        } else {
+            consumer.accept(null);
+        }
+        suspendFlag = false;
+    }
+}

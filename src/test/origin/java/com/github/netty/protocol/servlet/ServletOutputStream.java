@@ -1,0 +1,423 @@
+package com.github.netty.protocol.servlet;
+
+import com.github.netty.core.util.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedInput;
+import io.netty.util.internal.PlatformDependent;
+import jakarta.servlet.WriteListener;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+
+/**
+ * Servlet OutputStream
+ *
+ * @author wangzihao
+ */
+public class ServletOutputStream extends jakarta.servlet.ServletOutputStream implements Recyclable, NettyOutputStream {
+    public static final ServletResetBufferIOException RESET_BUFFER_EXCEPTION = new ServletResetBufferIOException();
+    private static final Recycler<ServletOutputStream> RECYCLER = new Recycler<>(ServletOutputStream::new);
+    public static int h2ChunkSize = 81920;
+    protected final AtomicLong writeBytes = new AtomicLong();
+    protected final AtomicBoolean isClosed = new AtomicBoolean(false);
+    protected final AtomicBoolean isSendResponse = new AtomicBoolean(false);
+    private final CloseListener closeListenerWrapper = new CloseListener();
+    protected ServletHttpExchange servletHttpExchange;
+    protected WriteListener writeListener;
+    protected ChannelProgressivePromise lastContentPromise;
+    private ChannelProgressivePromise blockPromise;
+
+    protected ServletOutputStream() {
+    }
+
+    public static ServletOutputStream newInstance(ServletHttpExchange servletHttpExchange) {
+        ServletOutputStream instance = RECYCLER.getInstance();
+        instance.blockPromise = null;
+        instance.setServletHttpExchange(servletHttpExchange);
+        instance.writeBytes.set(0);
+        instance.isSendResponse.set(false);
+        instance.isClosed.set(false);
+        return instance;
+    }
+
+    public long getWriteBytes() {
+        return writeBytes.get();
+    }
+
+
+    @Override
+    public void write(ByteBuffer buffer) throws IOException {
+        ByteBuf byteBuf = Unpooled.wrappedBuffer(buffer);
+        writeHttpBody(byteBuf, byteBuf.readableBytes());
+    }
+
+    //原来的write(ByteBuffer buffer)和ServletOutputStream同名方法冲突了
+    @Override
+    public ChannelProgressivePromise writeJDK(ByteBuffer httpBody) throws IOException {
+        ByteBuf byteBuf = Unpooled.wrappedBuffer(httpBody);
+        return writeHttpBody(byteBuf, byteBuf.readableBytes());
+    }
+
+    @Override
+    public ChannelProgressivePromise write(ByteBuf httpBody) throws IOException {
+        IOUtil.writerModeToReadMode(httpBody);
+        return writeHttpBody(httpBody, httpBody.readableBytes());
+    }
+
+    @Override
+    public ChannelProgressivePromise write(ChunkedInput input) throws IOException {
+        return writeHttpBody(input, input.length());
+    }
+
+    @Override
+    public ChannelProgressivePromise write(File file, long position, long count) throws IOException {
+        if (isHttp2()) {
+            return writeHttpBody(new ChunkedFile(new RandomAccessFile(file, "r"), position, count, h2ChunkSize), count);
+        } else {
+            return writeHttpBody(new DefaultFileRegion(file, position, count), count);
+        }
+    }
+
+    @Override
+    public ChannelProgressivePromise write(File httpBody) throws IOException {
+        long length = httpBody.length();
+        if (isHttp2()) {
+            return writeHttpBody(new ChunkedFile(new RandomAccessFile(httpBody, "r"), 0, length, h2ChunkSize), length);
+        } else {
+            return writeHttpBody(new DefaultFileRegion(httpBody, 0, length), length);
+        }
+    }
+
+    public boolean isHttp2() {
+        return servletHttpExchange.getProtocol().isHttp2();
+    }
+
+    protected ChannelProgressivePromise writeHttpBody(Object httpBody, long length) throws IOException {
+        if (httpBody instanceof FileRegion) {
+            servletHttpExchange.response.nettyResponse.setWriteSendFile(true);
+        }
+        try {
+            checkClosed();
+            writeResponseHeaderIfNeed();
+            ServletHttpExchange servletHttpExchange = this.servletHttpExchange;
+            ChannelHandlerContext context = servletHttpExchange.channelHandlerContext;
+            ChannelProgressivePromise promise = context.newProgressivePromise();
+
+            if (length > 0) {
+                writeBytes.addAndGet(length);
+            }
+
+            long contentLength = servletHttpExchange.response.getContentLength();
+            // response finish
+            if (contentLength >= 0 && writeBytes.get() >= contentLength) {
+                if (httpBody instanceof ByteBuf) {
+                    DefaultLastHttpContent httpContent = new DefaultLastHttpContent((ByteBuf) httpBody);
+                    context.write(httpContent, promise);
+                } else {
+                    context.write(httpBody);
+                    context.write(LastHttpContent.EMPTY_LAST_CONTENT, promise);
+                }
+                lastContentPromise = promise;
+            } else {
+                // Response continues
+                context.write(httpBody, promise);
+            }
+
+            // limiting control. avoid buffer memory overflow.
+            blockIfNeed(promise);
+            return promise;
+        } catch (Exception e) {
+            RecyclableUtil.release(httpBody);
+            throw e;
+        }
+    }
+
+    /**
+     * limiting control. avoid buffer memory overflow.
+     *
+     * @param promise last write promise
+     * @throws IOException wrap ClosedChannelException or other channel exception
+     */
+    private void blockIfNeed(ChannelProgressivePromise promise) throws IOException {
+        ServletHttpExchange exchange = this.servletHttpExchange;
+        ChannelHandlerContext context = exchange.channelHandlerContext;
+        long pendingWriteBytes = exchange.getPendingWriteBytes();
+        if (pendingWriteBytes <= 0) {
+            return;
+        }
+        if (context.executor().inEventLoop()) {
+            context.flush();
+            ChannelUtils.forceFlush(context.channel());
+        } else {
+            int bufferSize = exchange.response.getBufferSize();
+            ChannelProgressivePromise blockPromise = this.blockPromise;
+            boolean requiresFlush = true;
+            if (pendingWriteBytes >= bufferSize && blockPromise == null) {
+                context.flush();
+                requiresFlush = false;
+                // record promise
+                this.blockPromise = blockPromise = promise;
+            }
+
+            // Over the double buffer size, block the processing
+            int doubleBufferSize = bufferSize << 1;
+            if (pendingWriteBytes >= doubleBufferSize) {
+                try {
+                    if (blockPromise == null) {
+                        blockPromise = promise;
+                    }
+                    if (requiresFlush) {
+                        context.flush();
+                    }
+                    blockPromise.sync();
+                } catch (InterruptedException ignored) {
+                } catch (Exception e) {
+                    throw new IOException("flush fail = " + e, e);
+                } finally {
+                    this.blockPromise = null;
+                }
+            }
+        }
+    }
+
+    private void writeResponseHeaderIfNeed() {
+        if (isSendResponse.compareAndSet(false, true)) {
+            ServletHttpServletResponse servletResponse = servletHttpExchange.response;
+            NettyHttpResponse nettyResponse = servletResponse.nettyResponse;
+            ChannelHandlerContext context = servletHttpExchange.channelHandlerContext;
+            context.write(nettyResponse);
+        }
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        checkClosed();
+        if (len == 0) {
+            return;
+        }
+
+        ChannelHandlerContext context = servletHttpExchange.channelHandlerContext;
+        ByteBuf ioByteBuf = context.alloc().ioBuffer(len);
+        ioByteBuf.writeBytes(b, off, len);
+        IOUtil.writerModeToReadMode(ioByteBuf);
+
+        writeHttpBody(ioByteBuf, ioByteBuf.readableBytes());
+    }
+
+    @Override
+    public boolean isReady() {
+        ServletHttpExchange exchange = this.servletHttpExchange;
+        if (exchange == null) {
+            return true;
+        }
+
+        long pendingWriteBytes = exchange.getPendingWriteBytes();
+        if (pendingWriteBytes <= 0) {
+            return true;
+        }
+        boolean ready = true;
+        if (!exchange.channelHandlerContext.executor().inEventLoop()) {
+            // limiting control
+            // pendingWriteBytes < exchange.getResponse().getBufferSize() * 2
+            ready = pendingWriteBytes < (long) exchange.response.getBufferSize() << 1;
+        }
+        return ready;
+    }
+
+    @Override
+    public void setWriteListener(WriteListener writeListener) {
+        this.writeListener = writeListener;
+    }
+
+    public void setCloseListener(ChannelFutureListener closeListener) {
+        this.closeListenerWrapper.setCloseListener(closeListener);
+    }
+
+    @Override
+    public void write(byte[] b) throws IOException {
+        write(b, 0, b.length);
+    }
+
+    /**
+     * Int. Third-party frameworks are all 1 byte, not 4 bytes
+     *
+     * @param b byte
+     * @throws IOException IOException
+     */
+    @Override
+    public void write(int b) throws IOException {
+        checkClosed();
+        byte[] bytes = new byte[]{(byte) b};
+        write(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public void flush() throws IOException {
+        checkClosed();
+        writeResponseHeaderIfNeed();
+        ServletHttpExchange exchange = this.servletHttpExchange;
+        if (exchange != null && !exchange.servletContext.autoFlush) {
+            exchange.channelHandlerContext.flush();
+        }
+    }
+
+    /**
+     * End response object
+     * The following events indicate that the servlet has satisfied the request and the response object is about to close
+     * The following events indicate that the servlet has satisfied the request and the response object is about to close：
+     * ■The service method of the servlet terminates.
+     * ■The setContentLength or setContentLengthLong method of the response specifies an internal capacity greater than zero, and has already been written to the response.
+     * ■sendError Method called。
+     * ■sendRedirect Method called。
+     * ■AsyncContext.complete Method called
+     */
+    @Override
+    public void close() {
+        if (isClosed.compareAndSet(false, true)) {
+            ChannelFuture closeFuture = lastContentPromise;
+            if (closeFuture == null) {
+                ServletHttpExchange exchange = getServletHttpExchange();
+                ChannelHandlerContext context = exchange.channelHandlerContext;
+                writeResponseHeaderIfNeed();
+
+                if (exchange.servletContext.autoFlush) {
+                    closeFuture = context.write(LastHttpContent.EMPTY_LAST_CONTENT);
+                } else {
+                    closeFuture = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+                }
+                closeFuture.addListener(closeListenerWrapper);
+            } else if (closeFuture.isDone()) {
+                try {
+                    closeListenerWrapper.operationComplete(closeFuture);
+                } catch (Exception e) {
+                    PlatformDependent.throwException(e);
+                }
+            } else {
+                closeFuture.addListener(closeListenerWrapper);
+                if (!servletHttpExchange.servletContext.autoFlush) {
+                    ChannelHandlerContext context = servletHttpExchange.channelHandlerContext;
+                    context.flush();
+                }
+            }
+        }
+    }
+
+    /**
+     * Check if it's closed
+     *
+     * @throws ClosedChannelException
+     */
+    protected void checkClosed() throws IOException {
+        if (isClosed.get()) {
+            throw new IOException("Stream closed");
+        }
+        ServletHttpExchange exchange = this.servletHttpExchange;
+        if (exchange != null && !exchange.isChannelActive() && exchange.isAsyncStartIng()) {
+            throw new IOException("connection was forcibly closed by the remote host. " + exchange.channelHandlerContext.channel());
+        }
+    }
+
+    /**
+     * Reset buffer
+     */
+    protected void resetBuffer() {
+        if (isClosed.get()) {
+            return;
+        }
+        ServletHttpExchange exchange = getServletHttpExchange();
+        ChannelHandlerContext channelHandlerContext = exchange.channelHandlerContext;
+        ChannelHandlerContext context = channelHandlerContext.pipeline().context(ChunkedWriteHandler.class);
+        if (context != null) {
+            ChunkedWriteHandler handler = (ChunkedWriteHandler) context.handler();
+            int unWriteSize = handler.unWriteSize();
+            if (unWriteSize > 0) {
+                handler.discard(RESET_BUFFER_EXCEPTION);
+            }
+        }
+        writeBytes.set(0);
+    }
+
+    /**
+     * Get servlet object
+     *
+     * @return ServletHttpExchange
+     */
+    protected ServletHttpExchange getServletHttpExchange() {
+        return servletHttpExchange;
+    }
+
+    /**
+     * Put in the servlet object
+     *
+     * @param servletHttpExchange servletHttpExchange
+     */
+    protected void setServletHttpExchange(ServletHttpExchange servletHttpExchange) {
+        this.servletHttpExchange = servletHttpExchange;
+    }
+
+    /**
+     * Whether to shut down
+     *
+     * @return True = closed,false= not closed
+     */
+    public boolean isClosed() {
+        return isClosed.get();
+    }
+
+    @Override
+    public <T> void recycle(Consumer<T> consumer) {
+        if (isClosed.get()) {
+            return;
+        }
+        this.closeListenerWrapper.addRecycleConsumer(consumer);
+        close();
+    }
+
+    /**
+     * Closing the listening wrapper class (for data collection)
+     */
+    public class CloseListener implements ChannelFutureListener {
+        private final Queue<Consumer> recycleConsumerQueue = new LinkedList<>();
+        private ChannelFutureListener closeListener;
+
+        public void addRecycleConsumer(Consumer consumer) {
+            recycleConsumerQueue.add(consumer);
+        }
+
+        public void setCloseListener(ChannelFutureListener closeListener) {
+            this.closeListener = closeListener;
+        }
+
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            ChannelFutureListener closeListener = this.closeListener;
+            if (closeListener != null) {
+                closeListener.operationComplete(future);
+            }
+            Consumer recycleConsumer;
+            while ((recycleConsumer = recycleConsumerQueue.poll()) != null) {
+                recycleConsumer.accept(ServletOutputStream.this);
+            }
+            blockPromise = null;
+            lastContentPromise = null;
+            writeListener = null;
+            servletHttpExchange = null;
+            this.closeListener = null;
+            RECYCLER.recycleInstance(ServletOutputStream.this);
+        }
+    }
+
+}
