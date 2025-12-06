@@ -1,5 +1,6 @@
 package com.github.netty.solon.server;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -16,8 +17,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.netty.StartupServer;
+import com.github.netty.protocol.HttpServletProtocol;
+import com.github.netty.protocol.servlet.ServletContext;
 
-public class NettyTcpServerBase  implements ServerLifecycle, HttpServerConfigure{
+public abstract class NettyTcpServerBase  implements ServerLifecycle, HttpServerConfigure{
 	static final Logger log = LoggerFactory.getLogger(NettyTcpServerBase.class);
 	
 	protected StartupServer _server;
@@ -55,8 +58,10 @@ public class NettyTcpServerBase  implements ServerLifecycle, HttpServerConfigure
 	@Override
 	public void start(String host, int port) throws Throwable {
 		_server = new StartupServer(new InetSocketAddress(host,port));
+		ServletContext _serverContext = initServletContext();
 		
-		
+		_server.addProtocol(new HttpServletProtocol(_serverContext));
+		_server.start();
 	}
 
 	@Override
@@ -68,6 +73,7 @@ public class NettyTcpServerBase  implements ServerLifecycle, HttpServerConfigure
 		
 	}
 	
+	protected abstract ServletContext initServletContext() throws IOException;
 	
 
 }
